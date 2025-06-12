@@ -1,0 +1,41 @@
+name: Weekly Metrics
+
+on:
+  schedule:
+    - cron: "0 8 * * FRI"
+
+jobs:
+  metrics:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 8
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "pnpm"
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run build
+      - run: node dist/cli.js ${{ secrets.TARGET_REPO }} --format json > metrics.json
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: gh-pages
+      - run: |
+          mv metrics.json gh-pages/metrics.json
+          cd gh-pages
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          git add metrics.json
+          git commit -m "Update metrics" || true
+      - name: Push metrics
+        uses: ad-m/github-push-action@v0.6.0
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: gh-pages
+          directory: gh-pages
+          force: true

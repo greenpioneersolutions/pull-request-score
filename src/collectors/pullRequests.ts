@@ -1,0 +1,143 @@
+import { makeGraphQLClient } from "../api/githubGraphql.js";
+export interface CollectPullRequestsParams {
+  owner: string;
+  repo: string;
+  since: string;
+  auth: string;
+  baseUrl?: string;
+}
+
+export interface RawAuthor {
+  login: string;
+}
+export interface RawReview {
+  id: string;
+  state: string;
+  submittedAt: string;
+  author: RawAuthor | null;
+}
+export interface RawComment {
+  id: string;
+  body: string;
+  createdAt: string;
+  author: RawAuthor | null;
+}
+export interface RawCommit {
+  oid: string;
+  messageHeadline: string;
+  committedDate: string;
+}
+export interface RawCheckSuite {
+  id: string;
+  status: string;
+  conclusion: string | null;
+  startedAt: string;
+  completedAt: string;
+}
+
+export interface RawPullRequest {
+  id: string;
+  number: number;
+  title: string;
+  state: string;
+  createdAt: string;
+  updatedAt: string;
+  mergedAt: string | null;
+  closedAt: string | null;
+  author: RawAuthor | null;
+  reviews: RawReview[];
+  comments: RawComment[];
+  commits: RawCommit[];
+  checkSuites: RawCheckSuite[];
+}
+
+function mapPR(pr: any): RawPullRequest {
+  return {
+    id: pr.id,
+    number: pr.number,
+    title: pr.title,
+    state: pr.state,
+    createdAt: pr.createdAt,
+    updatedAt: pr.updatedAt,
+    mergedAt: pr.mergedAt,
+    closedAt: pr.closedAt,
+    author: pr.author ? { login: pr.author.login } : null,
+    reviews: pr.reviews.nodes.map((r: any) => ({
+      id: r.id,
+      state: r.state,
+      submittedAt: r.submittedAt,
+      author: r.author ? { login: r.author.login } : null,
+    })),
+    comments: pr.comments.nodes.map((c: any) => ({
+      id: c.id,
+      body: c.body,
+      createdAt: c.createdAt,
+      author: c.author ? { login: c.author.login } : null,
+    })),
+    commits: pr.commits.nodes.map((c: any) => ({
+      oid: c.commit.oid,
+      messageHeadline: c.commit.messageHeadline,
+      committedDate: c.commit.committedDate,
+    })),
+    checkSuites: pr.checkSuites.nodes.map((c: any) => ({
+      id: c.id,
+      status: c.status,
+      conclusion: c.conclusion,
+      startedAt: c.startedAt,
+      completedAt: c.completedAt,
+    })),
+  };
+}
+
+export async function collectPullRequests(
+  params: CollectPullRequestsParams,
+): Promise<RawPullRequest[]> {
+  const client = makeGraphQLClient({
+    auth: params.auth,
+    baseUrl: params.baseUrl,
+  });
+  const since = new Date(params.since);
+  const prs: RawPullRequest[] = [];
+  let cursor: string | null = null;
+  let hasNextPage = true;
+  const query = `query($owner:String!,$repo:String!,$cursor:String){repository(owner:$owner,name:$repo){pullRequests(first:100,after:$cursor,orderBy:{field:UPDATED_AT,direction:DESC}){pageInfo{hasNextPage,endCursor}nodes{id number title state createdAt updatedAt mergedAt closedAt author{login}reviews(first:100){nodes{id state submittedAt author{login}}}comments(first:100){nodes{id body createdAt author{login}}}commits(last:100){nodes{commit{oid committedDate messageHeadline}}}checkSuites(first:100){nodes{id status conclusion startedAt completedAt}}}}}}`;
+
+  let retries = 0;
+  while (hasNextPage) {
+    try {
+      const data: any = await client(query, {
+        owner: params.owner,
+        repo: params.repo,
+        cursor,
+      });
+      const connection = data.repository.pullRequests;
+      for (const pr of connection.nodes) {
+        if (new Date(pr.updatedAt) < since) {
+          hasNextPage = false;
+          break;
+        }
+        prs.push(mapPR(pr));
+      }
+      if (hasNextPage) {
+        hasNextPage = connection.pageInfo.hasNextPage;
+        cursor = connection.pageInfo.endCursor;
+      }
+      retries = 0;
+    } catch (err: any) {
+      if (
+        retries < 5 &&
+        (err.status === 403 || /secondary rate/i.test(err.message))
+      ) {
+        await new Promise((r) => setTimeout(r, 2 ** retries * 1000));
+        retries += 1;
+        continue;
+      }
+      throw err;
+    }
+  }
+
+  prs.sort((a, b) => Date.parse(a.createdAt) - Date.parse(b.createdAt));
+  return prs;
+}
+
+export default collectPullRequests;

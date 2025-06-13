@@ -1,22 +1,20 @@
 /** @type {import('jest').Config} */
 export default {
-  preset: "ts-jest/presets/default-esm",
-  testEnvironment: "node",
-  testMatch: ["**/test/**/*.test.ts"],
+  preset: 'ts-jest/presets/default-esm',
+  testEnvironment: 'node',
+  testMatch: ['**/test/**/*.test.ts'],
   moduleNameMapper: {
-    "^\.\./api/githubGraphql.js$": "<rootDir>/src/api/githubGraphql.ts",
-    "^\.\./src/api/githubGraphql.js$": "<rootDir>/src/api/githubGraphql.ts",
-    "^\./collectors/pullRequests.js$":
-      "<rootDir>/src/collectors/pullRequests.ts",
-    "^\./calculators/cycleTime.js$": "<rootDir>/src/calculators/cycleTime.ts",
-    "^\./calculators/reviewMetrics.js$":
-      "<rootDir>/src/calculators/reviewMetrics.ts",
-    "^\./calculators/metrics.js$": "<rootDir>/src/calculators/metrics.ts",
-    "^\./calculators/ciMetrics.js$": "<rootDir>/src/calculators/ciMetrics.ts",
-    "^\./output/writers.js$": "<rootDir>/src/output/writers.ts",
+    '^\.\./api/githubGraphql.js$': '<rootDir>/src/api/githubGraphql.ts',
+    '^\.\./src/api/githubGraphql.js$': '<rootDir>/src/api/githubGraphql.ts',
+    '^\./collectors/pullRequests.js$': '<rootDir>/src/collectors/pullRequests.ts',
+    '^\./calculators/cycleTime.js$': '<rootDir>/src/calculators/cycleTime.ts',
+    '^\./calculators/reviewMetrics.js$': '<rootDir>/src/calculators/reviewMetrics.ts',
+    '^\./calculators/metrics.js$': '<rootDir>/src/calculators/metrics.ts',
+    '^\./calculators/ciMetrics.js$': '<rootDir>/src/calculators/ciMetrics.ts',
+    '^\./output/writers.js$': '<rootDir>/src/output/writers.ts',
   },
   globals: {
-    "ts-jest": {
+    'ts-jest': {
       useESM: true,
     },
   },

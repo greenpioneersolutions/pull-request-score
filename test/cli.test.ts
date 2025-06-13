@@ -1,13 +1,13 @@
-jest.mock("../src/collectors/pullRequests", () => ({
+jest.mock('../src/collectors/pullRequests', () => ({
   collectPullRequests: jest.fn(async () => [
     {
-      id: "1",
+      id: '1',
       number: 1,
-      title: "t",
-      state: "OPEN",
-      createdAt: "2024-01-01T00:00:00Z",
-      updatedAt: "2024-01-02T00:00:00Z",
-      mergedAt: "2024-01-02T00:00:00Z",
+      title: 't',
+      state: 'OPEN',
+      createdAt: '2024-01-01T00:00:00Z',
+      updatedAt: '2024-01-02T00:00:00Z',
+      mergedAt: '2024-01-02T00:00:00Z',
       closedAt: null,
       additions: 1,
       deletions: 1,
@@ -16,9 +16,9 @@ jest.mock("../src/collectors/pullRequests", () => ({
       author: null,
       reviews: [
         {
-          id: "r1",
-          state: "APPROVED",
-          submittedAt: "2024-01-01T12:00:00Z",
+          id: 'r1',
+          state: 'APPROVED',
+          submittedAt: '2024-01-01T12:00:00Z',
           author: null,
         },
       ],
@@ -36,24 +36,22 @@ jest.mock("../src/collectors/pullRequests", () => ({
   },
 }));
 
-jest.mock("../src/calculators/cycleTime", () => ({
+jest.mock('../src/calculators/cycleTime', () => ({
   calculateCycleTime: jest.fn(() => 10),
 }));
-jest.mock("../src/calculators/reviewMetrics", () => ({
+jest.mock('../src/calculators/reviewMetrics', () => ({
   calculateReviewMetrics: jest.fn(() => 20),
 }));
 
-import fs from "fs";
-import os from "os";
-import path from "path";
+import fs from 'fs';
+import os from 'os';
+import path from 'path';
 
-describe("cli", () => {
+describe('cli', () => {
   const origArgv = process.argv;
-  const log = jest.spyOn(console, "log").mockImplementation(() => {});
-  const error = jest.spyOn(console, "error").mockImplementation(() => {});
-  const stdout = jest
-    .spyOn(process.stdout, "write")
-    .mockImplementation(() => true);
+  const log = jest.spyOn(console, 'log').mockImplementation(() => {});
+  const error = jest.spyOn(console, 'error').mockImplementation(() => {});
+  const stdout = jest.spyOn(process.stdout, 'write').mockImplementation(() => true);
 
   afterEach(() => {
     process.argv = origArgv;
@@ -64,9 +62,9 @@ describe("cli", () => {
     jest.clearAllMocks();
   });
 
-  it("prints JSON metrics", async () => {
-    const { runCli } = require("../src/cli");
-    process.argv = ["node", "cli", "foo/bar", "--token", "t"];
+  it('prints JSON metrics', async () => {
+    const { runCli } = require('../src/cli');
+    process.argv = ['node', 'cli', 'foo/bar', '--token', 't'];
     await runCli();
     expect(stdout).toHaveBeenCalledTimes(1);
     const firstCall = stdout.mock.calls[0]?.[0] as string;
@@ -75,49 +73,35 @@ describe("cli", () => {
     expect(output.pickupTime.p95).toBe(20);
   });
 
-  it("supports dry run", async () => {
-    const { runCli } = require("../src/cli");
-    process.argv = ["node", "cli", "foo/bar", "--token", "t", "--dry-run"];
+  it('supports dry run', async () => {
+    const { runCli } = require('../src/cli');
+    process.argv = ['node', 'cli', 'foo/bar', '--token', 't', '--dry-run'];
     await runCli();
-    expect(log).toHaveBeenCalledWith(
-      expect.stringContaining("Would fetch metrics"),
-    );
+    expect(log).toHaveBeenCalledWith(expect.stringContaining('Would fetch metrics'));
     expect(
-      (require("../src/collectors/pullRequests") as any).collectPullRequests,
+      (require('../src/collectors/pullRequests') as any).collectPullRequests,
     ).not.toHaveBeenCalled();
   });
 
-  it("prints progress information", async () => {
-    const { runCli } = require("../src/cli");
-    const mod = require("../src/collectors/pullRequests");
+  it('prints progress information', async () => {
+    const { runCli } = require('../src/cli');
+    const mod = require('../src/collectors/pullRequests');
     mod.collectPullRequests.mockImplementation(async (opts: any) => {
       opts.onProgress(1);
       opts.onProgress(2);
       return [];
     });
-    const stderr = jest
-      .spyOn(process.stderr, "write")
-      .mockImplementation(() => true);
-    process.argv = ["node", "cli", "foo/bar", "--token", "t", "--progress"];
+    const stderr = jest.spyOn(process.stderr, 'write').mockImplementation(() => true);
+    process.argv = ['node', 'cli', 'foo/bar', '--token', 't', '--progress'];
     await runCli();
     expect(stderr).toHaveBeenCalled();
     stderr.mockRestore();
   });
 
-  it("writes metrics to stderr", async () => {
-    const { runCli } = require("../src/cli");
-    const errSpy = jest
-      .spyOn(process.stderr, "write")
-      .mockImplementation(() => true);
-    process.argv = [
-      "node",
-      "cli",
-      "foo/bar",
-      "--token",
-      "t",
-      "--output",
-      "stderr",
-    ];
+  it('writes metrics to stderr', async () => {
+    const { runCli } = require('../src/cli');
+    const errSpy = jest.spyOn(process.stderr, 'write').mockImplementation(() => true);
+    process.argv = ['node', 'cli', 'foo/bar', '--token', 't', '--output', 'stderr'];
     await runCli();
     expect(errSpy).toHaveBeenCalled();
     errSpy.mockRestore();

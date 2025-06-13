@@ -6,33 +6,33 @@ const clientMock = jest.fn().mockResolvedValue({
 
 const makeGraphQLClientMock = jest.fn(() => clientMock);
 
-jest.mock("../src/api/githubGraphql.js", () => ({
+jest.mock('../src/api/githubGraphql.js', () => ({
   makeGraphQLClient: makeGraphQLClientMock,
 }));
 
-import { collectPullRequests } from "../src/collectors/pullRequests";
+import { collectPullRequests } from '../src/collectors/pullRequests';
 
-describe("collectPullRequests", () => {
+describe('collectPullRequests', () => {
   afterEach(() => {
     jest.clearAllMocks();
   });
 
-  it("invokes the GraphQL client", async () => {
+  it('invokes the GraphQL client', async () => {
     await collectPullRequests({
-      owner: "me",
-      repo: "repo",
-      since: "2024-01-01",
-      auth: "token123",
-      baseUrl: "http://g.test",
+      owner: 'me',
+      repo: 'repo',
+      since: '2024-01-01',
+      auth: 'token123',
+      baseUrl: 'http://g.test',
     });
 
     expect(makeGraphQLClientMock).toHaveBeenCalledWith({
-      auth: "token123",
-      baseUrl: "http://g.test",
+      auth: 'token123',
+      baseUrl: 'http://g.test',
     });
     expect(clientMock).toHaveBeenCalledTimes(1);
     expect(clientMock.mock.calls[0][1]).toEqual(
-      expect.objectContaining({ owner: "me", repo: "repo" })
+      expect.objectContaining({ owner: 'me', repo: 'repo' }),
     );
   });
 });

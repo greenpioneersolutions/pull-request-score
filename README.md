@@ -29,6 +29,7 @@ Documentation for the optional request throttling helper is available in
 ```bash
 pnpm install
 pnpm test
+pnpm run format
 ```
 
 ### CLI Usage

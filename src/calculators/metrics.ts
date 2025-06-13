@@ -3,7 +3,7 @@ export interface MetricsOptions {
   staleDays?: number;
 }
 
-import type { RawPullRequest } from "../collectors/pullRequests.js";
+import type { RawPullRequest } from '../collectors/pullRequests.js';
 
 export interface CalculatedMetrics {
   prCountPerDeveloper: Record<string, number>;
@@ -43,8 +43,7 @@ export function calculateMetrics(
 
   for (const pr of prs) {
     if (pr.author?.login) {
-      prCountPerDeveloper[pr.author.login] =
-        (prCountPerDeveloper[pr.author.login] ?? 0) + 1;
+      prCountPerDeveloper[pr.author.login] = (prCountPerDeveloper[pr.author.login] ?? 0) + 1;
     }
     if (pr.mergedAt) merged += 1;
     if (!pr.mergedAt && pr.closedAt) closedWithoutMerge += 1;
@@ -59,7 +58,7 @@ export function calculateMetrics(
 
     for (const cs of pr.checkSuites) {
       checkSuiteCount += 1;
-      if (cs.conclusion === "SUCCESS") buildSuccess += 1;
+      if (cs.conclusion === 'SUCCESS') buildSuccess += 1;
       const start = Date.parse(cs.startedAt);
       const end = Date.parse(cs.completedAt);
       if (!Number.isNaN(start) && !Number.isNaN(end)) {
@@ -67,7 +66,7 @@ export function calculateMetrics(
       }
     }
 
-    if (pr.state === "OPEN") {
+    if (pr.state === 'OPEN') {
       prBacklog += 1;
       const updated = Date.parse(pr.updatedAt);
       if (Date.now() - updated > staleDays * 86_400_000) {
@@ -89,9 +88,7 @@ export function calculateMetrics(
     reviewCoverage: prs.length ? reviewedPrs / prs.length : 0,
     reviewCounts,
     buildSuccessRate: checkSuiteCount ? buildSuccess / checkSuiteCount : 0,
-    averageCiDuration: checkSuiteCount
-      ? totalCiDuration / checkSuiteCount / 1000
-      : 0,
+    averageCiDuration: checkSuiteCount ? totalCiDuration / checkSuiteCount / 1000 : 0,
     stalePrCount,
     hotfixFrequency: prs.length ? hotfixCount / prs.length : 0,
     prBacklog,

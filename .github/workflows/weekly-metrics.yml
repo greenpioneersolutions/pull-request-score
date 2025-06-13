@@ -2,7 +2,7 @@ name: Weekly Metrics
 
 on:
   schedule:
-    - cron: "0 8 * * FRI"
+    - cron: '0 8 * * FRI'
 
 jobs:
   metrics:
@@ -15,7 +15,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: "pnpm"
+          cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
       - run: pnpm run build
       - run: node dist/cli.js ${{ secrets.TARGET_REPO }} --format json > metrics.json

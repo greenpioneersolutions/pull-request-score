@@ -1,15 +1,15 @@
 #!/usr/bin/env node
-import { Command } from "commander";
-import ms from "ms";
+import { Command } from 'commander';
+import ms from 'ms';
 import {
   collectPullRequests,
   PartialResultsError,
   RawPullRequest,
   CollectPullRequestsParams,
-} from "./collectors/pullRequests.js";
-import { calculateCycleTime } from "./calculators/cycleTime.js";
-import { calculateReviewMetrics } from "./calculators/reviewMetrics.js";
-import { writeOutput } from "./output/writers.js";
+} from './collectors/pullRequests.js';
+import { calculateCycleTime } from './calculators/cycleTime.js';
+import { calculateReviewMetrics } from './calculators/reviewMetrics.js';
+import { writeOutput } from './output/writers.js';
 
 interface CliOptions {
   since: string;
@@ -43,42 +43,35 @@ function stats(values: number[]): {
 export async function runCli(argv = process.argv): Promise<void> {
   const program = new Command();
   program
-    .name("gh-pr-metrics")
-    .description("Calculate GitHub pull request metrics")
-    .argument("<repo>", "owner/repo")
-    .option("--since <duration>", "look back period", "90d")
-    .option("--format <format>", "json or csv", "json")
-    .option("--token <token>", "GitHub token")
-    .option("--base-url <url>", "GitHub API base URL")
-    .option("--dry-run", "print options and exit")
-    .option("--progress", "show progress during fetch")
-    .option(
-      "--output <path|stdout|stderr>",
-      "write metrics to file or stdout/stderr",
-      "stdout",
-    )
+    .name('gh-pr-metrics')
+    .description('Calculate GitHub pull request metrics')
+    .argument('<repo>', 'owner/repo')
+    .option('--since <duration>', 'look back period', '90d')
+    .option('--format <format>', 'json or csv', 'json')
+    .option('--token <token>', 'GitHub token')
+    .option('--base-url <url>', 'GitHub API base URL')
+    .option('--dry-run', 'print options and exit')
+    .option('--progress', 'show progress during fetch')
+    .option('--output <path|stdout|stderr>', 'write metrics to file or stdout/stderr', 'stdout')
     .allowExcessArguments(false);
 
   program.parse(argv);
   const opts = program.opts<CliOptions>();
-  const [owner, repo] = (program.args[0] || "").split("/");
-  const token = opts.token ?? process.env["GH_TOKEN"];
+  const [owner, repo] = (program.args[0] || '').split('/');
+  const token = opts.token ?? process.env['GH_TOKEN'];
   if (!owner || !repo) {
-    console.error("Repository must be in <owner>/<repo> format");
+    console.error('Repository must be in <owner>/<repo> format');
     program.help({ error: true });
   }
   if (!token) {
-    console.error("GitHub token required via --token or GH_TOKEN env");
+    console.error('GitHub token required via --token or GH_TOKEN env');
     program.help({ error: true });
   }
-  const sinceMs =
-    typeof ms(opts.since) === "number" ? (ms(opts.since) as number) : ms("90d");
+  const sinceMs = typeof ms(opts.since) === 'number' ? (ms(opts.since) as number) : ms('90d');
   const since = new Date(Date.now() - sinceMs).toISOString();
 
   if (opts.dryRun) {
-    console.log(
-      `Would fetch metrics for ${owner}/${repo} since ${opts.since}`,
-    );
+    console.log(`Would fetch metrics for ${owner}/${repo} since ${opts.since}`);
     return;
   }
 
@@ -100,12 +93,10 @@ export async function runCli(argv = process.argv): Promise<void> {
   let prs: RawPullRequest[] = [];
   try {
     prs = await collectPullRequests(collectOpts);
-    if (onProgress) process.stderr.write("\n");
+    if (onProgress) process.stderr.write('\n');
   } catch (err: any) {
     if (err instanceof PartialResultsError) {
-      console.error(
-        `Encountered error after ${err.partial.length} PRs: ${err.message}`,
-      );
+      console.error(`Encountered error after ${err.partial.length} PRs: ${err.message}`);
       prs = err.partial;
     } else {
       console.error(`Failed to fetch pull requests: ${err.message}`);
@@ -117,24 +108,24 @@ export async function runCli(argv = process.argv): Promise<void> {
   const cycleTimes: number[] = [];
   const pickupTimes: number[] = [];
   for (const pr of prs) {
-      try {
-        cycleTimes.push(calculateCycleTime(pr));
-      } catch {
-        /* ignore */
-      }
-      try {
-        pickupTimes.push(calculateReviewMetrics(pr));
-      } catch {
-        /* ignore */
-      }
+    try {
+      cycleTimes.push(calculateCycleTime(pr));
+    } catch {
+      /* ignore */
     }
+    try {
+      pickupTimes.push(calculateReviewMetrics(pr));
+    } catch {
+      /* ignore */
+    }
+  }
   const result = {
     cycleTime: stats(cycleTimes),
     pickupTime: stats(pickupTimes),
   };
 
   writeOutput(result, {
-    format: opts.format as "json" | "csv",
+    format: opts.format as 'json' | 'csv',
     destination: opts.output,
   });
 }

@@ -58,6 +58,10 @@ function mapPR(pr: any): RawPullRequest {
       startedAt: c.startedAt,
       completedAt: c.completedAt,
     })),
+    additions: pr.additions,
+    deletions: pr.deletions,
+    changedFiles: pr.changedFiles,
+    labels: pr.labels.nodes.map((l: any) => ({ name: l.name })),
   };
 }
 
@@ -72,7 +76,7 @@ export async function collectPullRequests(
   const prs: RawPullRequest[] = [];
   let cursor: string | null = null;
   let hasNextPage = true;
-  const query = `query($owner:String!,$repo:String!,$cursor:String){repository(owner:$owner,name:$repo){pullRequests(first:100,after:$cursor,orderBy:{field:UPDATED_AT,direction:DESC}){pageInfo{hasNextPage,endCursor}nodes{id number title state createdAt updatedAt mergedAt closedAt author{login}reviews(first:100){nodes{id state submittedAt author{login}}}comments(first:100){nodes{id body createdAt author{login}}}commits(last:100){nodes{commit{oid committedDate messageHeadline}}}checkSuites(first:100){nodes{id status conclusion startedAt completedAt}}}}}}`;
+  const query = `query($owner:String!,$repo:String!,$cursor:String){repository(owner:$owner,name:$repo){pullRequests(first:100,after:$cursor,orderBy:{field:UPDATED_AT,direction:DESC}){pageInfo{hasNextPage,endCursor}nodes{id number title state createdAt updatedAt mergedAt closedAt additions deletions changedFiles labels(first:20){nodes{name}} author{login}reviews(first:100){nodes{id state submittedAt author{login}}}comments(first:100){nodes{id body createdAt author{login}}}commits(last:100){nodes{commit{oid committedDate messageHeadline}}}checkSuites(first:100){nodes{id status conclusion startedAt completedAt}}}}}}`;
 
   let retries = 0;
   while (hasNextPage) {

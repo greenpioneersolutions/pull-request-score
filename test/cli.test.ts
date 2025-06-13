@@ -9,6 +9,10 @@ jest.mock("../src/collectors/pullRequests", () => ({
       updatedAt: "2024-01-02T00:00:00Z",
       mergedAt: "2024-01-02T00:00:00Z",
       closedAt: null,
+      additions: 1,
+      deletions: 1,
+      changedFiles: 1,
+      labels: [],
       author: null,
       reviews: [
         {

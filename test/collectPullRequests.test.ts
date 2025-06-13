@@ -43,6 +43,10 @@ describe("collectPullRequests", () => {
                   updatedAt: "2024-01-02T00:00:00Z",
                   mergedAt: null,
                   closedAt: null,
+                  additions: 5,
+                  deletions: 1,
+                  changedFiles: 2,
+                  labels: { nodes: [] },
                   author: { login: "a" },
                   reviews: { nodes: [] },
                   comments: { nodes: [] },
@@ -58,6 +62,10 @@ describe("collectPullRequests", () => {
                   updatedAt: "2024-01-03T00:00:00Z",
                   mergedAt: null,
                   closedAt: null,
+                  additions: 3,
+                  deletions: 2,
+                  changedFiles: 1,
+                  labels: { nodes: [] },
                   author: { login: "b" },
                   reviews: { nodes: [] },
                   comments: { nodes: [] },
@@ -85,6 +93,10 @@ describe("collectPullRequests", () => {
                   updatedAt: "2024-01-03T12:00:00Z",
                   mergedAt: null,
                   closedAt: null,
+                  additions: 4,
+                  deletions: 0,
+                  changedFiles: 1,
+                  labels: { nodes: [] },
                   author: { login: "c" },
                   reviews: { nodes: [] },
                   comments: { nodes: [] },
@@ -100,6 +112,10 @@ describe("collectPullRequests", () => {
                   updatedAt: "2023-12-31T00:00:00Z",
                   mergedAt: null,
                   closedAt: null,
+                  additions: 10,
+                  deletions: 5,
+                  changedFiles: 5,
+                  labels: { nodes: [] },
                   author: { login: "d" },
                   reviews: { nodes: [] },
                   comments: { nodes: [] },
@@ -121,6 +137,8 @@ describe("collectPullRequests", () => {
     });
 
     expect(prs.map((p) => p.id)).toEqual(["1", "2", "3"]);
+    expect(prs[0]?.additions).toBe(5);
+    expect(prs[1]?.labels).toEqual([]);
     scope.done();
   });
 });

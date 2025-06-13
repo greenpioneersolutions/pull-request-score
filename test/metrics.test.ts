@@ -41,4 +41,53 @@ describe("calculateMetrics", () => {
     expect(m.stalePrCount).toBe(1);
     expect(m.hotfixFrequency).toBe(1);
   });
+
+  it("detects outsized PRs", () => {
+    const big = { ...base, number: 4, additions: 60, deletions: 60 };
+    const m = calculateMetrics([big], { outsizedThreshold: 100 });
+    expect(m.outsizedPrs).toEqual([4]);
+  });
+
+  it("computes review coverage", () => {
+    const reviewed = {
+      ...base,
+      number: 5,
+      reviews: [{ id: "r1", state: "APPROVED", submittedAt: base.createdAt, author: { login: "b" } }],
+    };
+    const m = calculateMetrics([base, reviewed]);
+    expect(m.reviewCoverage).toBeCloseTo(0.5);
+    expect(m.reviewCounts[5]).toBe(1);
+  });
+
+  it("calculates build success rate", () => {
+    const pr = {
+      ...base,
+      number: 6,
+      checkSuites: [
+        { id: "1", status: "COMPLETED", conclusion: "SUCCESS", startedAt: base.createdAt, completedAt: base.createdAt },
+        { id: "2", status: "COMPLETED", conclusion: "FAILURE", startedAt: base.createdAt, completedAt: base.createdAt },
+      ],
+    };
+    const m = calculateMetrics([pr]);
+    expect(m.buildSuccessRate).toBeCloseTo(0.5);
+  });
+
+  it("counts PR backlog", () => {
+    const closed = { ...base, number: 7, state: "CLOSED", closedAt: "2024-01-02T00:00:00Z" };
+    const m = calculateMetrics([base, closed]);
+    expect(m.prBacklog).toBe(1);
+  });
+
+  it("handles empty input", () => {
+    const m = calculateMetrics([]);
+    expect(m.mergeRate).toBe(0);
+    expect(m.outsizedPrs.length).toBe(0);
+    expect(m.prBacklog).toBe(0);
+  });
+
+  it("handles missing author field", () => {
+    const pr: RawPullRequest = { ...base, number: 8, author: null };
+    const m = calculateMetrics([pr]);
+    expect(m.prCountPerDeveloper["a"]).toBeUndefined();
+  });
 });

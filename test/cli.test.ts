@@ -42,19 +42,23 @@ describe("cli", () => {
   const origArgv = process.argv;
   const log = jest.spyOn(console, "log").mockImplementation(() => {});
   const error = jest.spyOn(console, "error").mockImplementation(() => {});
+  const stdout = jest
+    .spyOn(process.stdout, "write")
+    .mockImplementation(() => true);
 
   afterEach(() => {
     process.argv = origArgv;
     log.mockClear();
     error.mockClear();
+    stdout.mockClear();
     jest.clearAllMocks();
   });
 
   it("prints JSON metrics", async () => {
     process.argv = ["node", "cli", "foo/bar", "--token", "t"];
     await runCli();
-    expect(log).toHaveBeenCalledTimes(1);
-    const firstCall = log.mock.calls[0]?.[0] as string;
+    expect(stdout).toHaveBeenCalledTimes(1);
+    const firstCall = stdout.mock.calls[0]?.[0] as string;
     const output = JSON.parse(firstCall);
     expect(output.cycleTime.median).toBe(10);
     expect(output.pickupTime.p95).toBe(20);

@@ -30,3 +30,14 @@ Documentation for the optional request throttling helper is available in
 pnpm install
 pnpm test
 ```
+
+### CLI Usage
+
+```
+npx gh-pr-metrics <owner/repo> --since 30d --token YOUR_TOKEN \
+  --base-url https://github.mycompany.com/api/v3 --progress
+```
+
+Use `--dry-run` to check parameters without contacting GitHub. The `--base-url`
+option enables GitHub Enterprise support by pointing to the API root.
+Progress output is printed to stderr as pull requests are fetched.

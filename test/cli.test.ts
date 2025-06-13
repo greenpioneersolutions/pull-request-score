@@ -42,6 +42,9 @@ jest.mock("../src/calculators/cycleTime", () => ({
 jest.mock("../src/calculators/reviewMetrics", () => ({
   calculateReviewMetrics: jest.fn(() => 20),
 }));
+jest.mock("../src/calculators/metrics", () => ({
+  calculateMetrics: jest.fn(() => ({ mergeRate: 0.5 })),
+}));
 
 import fs from "fs";
 import os from "os";
@@ -121,5 +124,14 @@ describe("cli", () => {
     await runCli();
     expect(errSpy).toHaveBeenCalled();
     errSpy.mockRestore();
+  });
+
+  it("includes all metrics when requested", async () => {
+    const { runCli } = require("../src/cli");
+    process.argv = ["node", "cli", "foo/bar", "--token", "t", "--all-metrics"];
+    await runCli();
+    const firstCall = stdout.mock.calls[0]?.[0] as string;
+    const output = JSON.parse(firstCall);
+    expect(output.mergeRate).toBe(0.5);
   });
 });

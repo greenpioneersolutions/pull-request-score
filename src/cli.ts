@@ -9,6 +9,7 @@ import {
 } from "./collectors/pullRequests.js";
 import { calculateCycleTime } from "./calculators/cycleTime.js";
 import { calculateReviewMetrics } from "./calculators/reviewMetrics.js";
+import { calculateMetrics } from "./calculators/metrics.js";
 import { writeOutput } from "./output/writers.js";
 
 interface CliOptions {
@@ -19,6 +20,7 @@ interface CliOptions {
   dryRun?: boolean;
   progress?: boolean;
   output?: string;
+  allMetrics?: boolean;
 }
 
 function stats(values: number[]): {
@@ -52,6 +54,7 @@ export async function runCli(argv = process.argv): Promise<void> {
     .option("--base-url <url>", "GitHub API base URL")
     .option("--dry-run", "print options and exit")
     .option("--progress", "show progress during fetch")
+    .option("--all-metrics", "include additional metrics")
     .option(
       "--output <path|stdout|stderr>",
       "write metrics to file or stdout/stderr",
@@ -127,8 +130,10 @@ export async function runCli(argv = process.argv): Promise<void> {
       } catch {
         /* ignore */
       }
-    }
+  }
+  const extra = opts.allMetrics ? calculateMetrics(prs) : {};
   const result = {
+    ...extra,
     cycleTime: stats(cycleTimes),
     pickupTime: stats(pickupTimes),
   };

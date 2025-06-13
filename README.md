@@ -49,3 +49,4 @@ Use `--dry-run` to check parameters without contacting GitHub. The `--base-url`
 option enables GitHub Enterprise support by pointing to the API root.
 Progress output is printed to stderr as pull requests are fetched.
 Set `--output <path|stdout|stderr>` to control where the metrics are written.
+Use `--all-metrics` to include additional repository metrics in the output.

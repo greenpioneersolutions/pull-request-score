@@ -1,0 +1,49 @@
+{
+  "name": "@gh-pr-metrics/core",
+  "version": "0.1.0",
+  "description": "",
+  "type": "module",
+  "main": "./dist/index.js",
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "bin": {
+    "gh-pr-metrics": "./dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "lint": "eslint . --ext .ts",
+    "format": "prettier --write .",
+    "test": "pnpm exec jest",
+    "release": "semantic-release"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "author": "Jason <jason@example.com>",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/jest": "^29.5.14",
+    "@types/node": "^20.11.19",
+    "@typescript-eslint/eslint-plugin": "^8.34.0",
+    "@typescript-eslint/parser": "^8.34.0",
+    "eslint": "^8.57.1",
+    "jest": "^30.0.0",
+    "nock": "^14.0.5",
+    "prettier": "^3.5.3",
+    "semantic-release": "^24.2.5",
+    "@types/ms": "^0.7.31",
+    "ts-jest": "^29.1.1",
+    "typescript": "^5.4.5"
+  },
+  "dependencies": {
+    "@octokit/core": "^7.0.2",
+    "@octokit/graphql": "^9.0.1",
+    "@octokit/plugin-throttling": "^11.0.1",
+    "commander": "^11.0.0",
+    "ms": "^2.1.3"
+  }
+}

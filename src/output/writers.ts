@@ -4,6 +4,7 @@ import { Writable } from "stream";
 export interface OutputMetrics {
   cycleTime: { median: number | null; p95: number | null };
   pickupTime: { median: number | null; p95: number | null };
+  [key: string]: unknown;
 }
 
 export interface WriteOutputOptions {

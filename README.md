@@ -38,6 +38,14 @@ npx gh-pr-metrics <owner/repo> --since 30d --token YOUR_TOKEN \
   --base-url https://github.mycompany.com/api/v3 --progress
 ```
 
+To save the metrics to a file:
+
+```
+npx gh-pr-metrics <owner/repo> --format csv --token YOUR_TOKEN \
+  --output metrics.csv
+```
+
 Use `--dry-run` to check parameters without contacting GitHub. The `--base-url`
 option enables GitHub Enterprise support by pointing to the API root.
 Progress output is printed to stderr as pull requests are fetched.
+Set `--output <path|stdout|stderr>` to control where the metrics are written.

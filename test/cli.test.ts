@@ -27,6 +27,13 @@ jest.mock("../src/collectors/pullRequests", () => ({
       checkSuites: [],
     },
   ]),
+  PartialResultsError: class PartialResultsError extends Error {
+    public partial: any[];
+    constructor(message: string, partial: any[]) {
+      super(message);
+      this.partial = partial;
+    }
+  },
 }));
 
 jest.mock("../src/calculators/cycleTime", () => ({
@@ -36,7 +43,9 @@ jest.mock("../src/calculators/reviewMetrics", () => ({
   calculateReviewMetrics: jest.fn(() => 20),
 }));
 
-import { runCli } from "../src/cli";
+import fs from "fs";
+import os from "os";
+import path from "path";
 
 describe("cli", () => {
   const origArgv = process.argv;
@@ -51,10 +60,12 @@ describe("cli", () => {
     log.mockClear();
     error.mockClear();
     stdout.mockClear();
+    jest.resetModules();
     jest.clearAllMocks();
   });
 
   it("prints JSON metrics", async () => {
+    const { runCli } = require("../src/cli");
     process.argv = ["node", "cli", "foo/bar", "--token", "t"];
     await runCli();
     expect(stdout).toHaveBeenCalledTimes(1);
@@ -65,6 +76,7 @@ describe("cli", () => {
   });
 
   it("supports dry run", async () => {
+    const { runCli } = require("../src/cli");
     process.argv = ["node", "cli", "foo/bar", "--token", "t", "--dry-run"];
     await runCli();
     expect(log).toHaveBeenCalledWith(
@@ -76,6 +88,7 @@ describe("cli", () => {
   });
 
   it("prints progress information", async () => {
+    const { runCli } = require("../src/cli");
     const mod = require("../src/collectors/pullRequests");
     mod.collectPullRequests.mockImplementation(async (opts: any) => {
       opts.onProgress(1);
@@ -89,5 +102,24 @@ describe("cli", () => {
     await runCli();
     expect(stderr).toHaveBeenCalled();
     stderr.mockRestore();
+  });
+
+  it("writes metrics to stderr", async () => {
+    const { runCli } = require("../src/cli");
+    const errSpy = jest
+      .spyOn(process.stderr, "write")
+      .mockImplementation(() => true);
+    process.argv = [
+      "node",
+      "cli",
+      "foo/bar",
+      "--token",
+      "t",
+      "--output",
+      "stderr",
+    ];
+    await runCli();
+    expect(errSpy).toHaveBeenCalled();
+    errSpy.mockRestore();
   });
 });

@@ -1,7 +1,12 @@
 #!/usr/bin/env node
-import { program } from "commander";
+import { Command } from "commander";
 import ms from "ms";
-import { collectPullRequests } from "./collectors/pullRequests.js";
+import {
+  collectPullRequests,
+  PartialResultsError,
+  RawPullRequest,
+  CollectPullRequestsParams,
+} from "./collectors/pullRequests.js";
 import { calculateCycleTime } from "./calculators/cycleTime.js";
 import { calculateReviewMetrics } from "./calculators/reviewMetrics.js";
 
@@ -9,6 +14,9 @@ interface CliOptions {
   since: string;
   format: string;
   token?: string;
+  baseUrl?: string;
+  dryRun?: boolean;
+  progress?: boolean;
 }
 
 function stats(values: number[]): {
@@ -31,12 +39,17 @@ function stats(values: number[]): {
 }
 
 export async function runCli(argv = process.argv): Promise<void> {
+  const program = new Command();
   program
     .name("gh-pr-metrics")
+    .description("Calculate GitHub pull request metrics")
     .argument("<repo>", "owner/repo")
     .option("--since <duration>", "look back period", "90d")
     .option("--format <format>", "json or csv", "json")
     .option("--token <token>", "GitHub token")
+    .option("--base-url <url>", "GitHub API base URL")
+    .option("--dry-run", "print options and exit")
+    .option("--progress", "show progress during fetch")
     .allowExcessArguments(false);
 
   program.parse(argv);
@@ -55,11 +68,48 @@ export async function runCli(argv = process.argv): Promise<void> {
     typeof ms(opts.since) === "number" ? (ms(opts.since) as number) : ms("90d");
   const since = new Date(Date.now() - sinceMs).toISOString();
 
+  if (opts.dryRun) {
+    console.log(
+      `Would fetch metrics for ${owner}/${repo} since ${opts.since}`,
+    );
+    return;
+  }
+
+  const onProgress = opts.progress
+    ? (count: number) => {
+        process.stderr.write(`Fetched ${count} PRs\r`);
+      }
+    : undefined;
+
+  const collectOpts: CollectPullRequestsParams = {
+    owner: owner as string,
+    repo: repo as string,
+    since,
+    auth: token as string,
+    baseUrl: opts.baseUrl,
+    onProgress,
+  };
+
+  let prs: RawPullRequest[] = [];
   try {
-    const prs = await collectPullRequests({ owner, repo, since, auth: token });
-    const cycleTimes: number[] = [];
-    const pickupTimes: number[] = [];
-    for (const pr of prs) {
+    prs = await collectPullRequests(collectOpts);
+    if (onProgress) process.stderr.write("\n");
+  } catch (err: any) {
+    if (err instanceof PartialResultsError) {
+      console.error(
+        `Encountered error after ${err.partial.length} PRs: ${err.message}`,
+      );
+      prs = err.partial;
+    } else {
+      console.error(`Failed to fetch pull requests: ${err.message}`);
+      process.exitCode = 1;
+      return;
+    }
+  }
+
+  const cycleTimes: number[] = [];
+  const pickupTimes: number[] = [];
+  for (const pr of prs) {
       try {
         cycleTimes.push(calculateCycleTime(pr));
       } catch {
@@ -71,32 +121,28 @@ export async function runCli(argv = process.argv): Promise<void> {
         /* ignore */
       }
     }
-    const result = {
-      cycleTime: stats(cycleTimes),
-      pickupTime: stats(pickupTimes),
-    };
+  const result = {
+    cycleTime: stats(cycleTimes),
+    pickupTime: stats(pickupTimes),
+  };
 
-    if (opts.format === "csv") {
-      const rows = [
-        ["metric", "median", "p95"],
-        [
-          "cycleTime",
-          String(result.cycleTime.median ?? ""),
-          String(result.cycleTime.p95 ?? ""),
-        ],
-        [
-          "pickupTime",
-          String(result.pickupTime.median ?? ""),
-          String(result.pickupTime.p95 ?? ""),
-        ],
-      ];
-      console.log(rows.map((r) => r.join(",")).join("\n"));
-    } else {
-      console.log(JSON.stringify(result, null, 2));
-    }
-  } catch (err: any) {
-    console.error(`Failed to fetch pull requests: ${err.message}`);
-    process.exitCode = 1;
+  if (opts.format === "csv") {
+    const rows = [
+      ["metric", "median", "p95"],
+      [
+        "cycleTime",
+        String(result.cycleTime.median ?? ""),
+        String(result.cycleTime.p95 ?? ""),
+      ],
+      [
+        "pickupTime",
+        String(result.pickupTime.median ?? ""),
+        String(result.pickupTime.p95 ?? ""),
+      ],
+    ];
+    console.log(rows.map((r) => r.join(",")).join("\n"));
+  } else {
+    console.log(JSON.stringify(result, null, 2));
   }
 }
 

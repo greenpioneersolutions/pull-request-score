@@ -8,20 +8,29 @@ import type {
   CheckSuite,
 } from "../models/index.js";
 
-export interface CollectPullRequestsParams {
-  owner: string;
-  repo: string;
-  since: string;
-  auth: string;
-  baseUrl?: string;
-}
-
 export type RawAuthor = Author;
 export type RawReview = Review;
 export type RawComment = Comment;
 export type RawCommit = Commit;
 export type RawCheckSuite = CheckSuite;
 export type RawPullRequest = PullRequest;
+
+export class PartialResultsError extends Error {
+  public partial: RawPullRequest[];
+  constructor(message: string, partial: RawPullRequest[]) {
+    super(message);
+    this.partial = partial;
+  }
+}
+
+export interface CollectPullRequestsParams {
+  owner: string;
+  repo: string;
+  since: string;
+  auth: string;
+  baseUrl?: string;
+  onProgress?: (count: number) => void;
+}
 
 function mapPR(pr: any): RawPullRequest {
   return {
@@ -93,6 +102,7 @@ export async function collectPullRequests(
           break;
         }
         prs.push(mapPR(pr));
+        params.onProgress?.(prs.length);
       }
       if (hasNextPage) {
         hasNextPage = connection.pageInfo.hasNextPage;
@@ -107,6 +117,9 @@ export async function collectPullRequests(
         await new Promise((r) => setTimeout(r, 2 ** retries * 1000));
         retries += 1;
         continue;
+      }
+      if (prs.length) {
+        throw new PartialResultsError(err.message, prs);
       }
       throw err;
     }

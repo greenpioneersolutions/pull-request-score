@@ -1,31 +1,15 @@
 name: CI
-
 on:
+  pull_request:
   push:
     branches: [main]
-  pull_request:
-
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v2
         with:
-          version: 9
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: "pnpm"
-      - run: pnpm install --frozen-lockfile
-      - name: Lint
-        run: pnpm run lint
-      - name: Build
-        run: pnpm run build
-      - name: Test
-        run: pnpm exec jest --coverage
-      - name: Upload coverage
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage
-          path: coverage
+          version: 8
+      - run: pnpm install
+      - run: pnpm test

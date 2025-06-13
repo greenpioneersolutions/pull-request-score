@@ -141,4 +141,91 @@ describe("collectPullRequests", () => {
     expect(prs[1]?.labels).toEqual([]);
     scope.done();
   });
+
+  it("invokes progress callback", async () => {
+    nock(baseUrl)
+      .post("/graphql")
+      .reply(200, {
+        data: {
+          repository: {
+            pullRequests: {
+              pageInfo: { hasNextPage: false, endCursor: null },
+              nodes: [
+                {
+                  id: "1",
+                  number: 1,
+                  title: "pr1",
+                  state: "OPEN",
+                  createdAt: "2024-01-01T00:00:00Z",
+                  updatedAt: "2024-01-02T00:00:00Z",
+                  mergedAt: null,
+                  closedAt: null,
+                  additions: 1,
+                  deletions: 1,
+                  changedFiles: 1,
+                  labels: { nodes: [] },
+                  author: { login: "a" },
+                  reviews: { nodes: [] },
+                  comments: { nodes: [] },
+                  commits: { nodes: [] },
+                  checkSuites: { nodes: [] },
+                },
+              ],
+            },
+          },
+        },
+      });
+    const counts: number[] = [];
+    await collectPullRequests({
+      owner: "me",
+      repo: "r",
+      since,
+      auth,
+      baseUrl,
+      onProgress: (c) => counts.push(c),
+    });
+    expect(counts).toEqual([1]);
+  });
+
+  it("returns partial results on error", async () => {
+    const scope = nock(baseUrl)
+      .post("/graphql")
+      .reply(200, {
+        data: {
+          repository: {
+            pullRequests: {
+              pageInfo: { hasNextPage: true, endCursor: "c1" },
+              nodes: [
+                {
+                  id: "1",
+                  number: 1,
+                  title: "pr1",
+                  state: "OPEN",
+                  createdAt: "2024-01-01T00:00:00Z",
+                  updatedAt: "2024-01-02T00:00:00Z",
+                  mergedAt: null,
+                  closedAt: null,
+                  additions: 1,
+                  deletions: 1,
+                  changedFiles: 1,
+                  labels: { nodes: [] },
+                  author: { login: "a" },
+                  reviews: { nodes: [] },
+                  comments: { nodes: [] },
+                  commits: { nodes: [] },
+                  checkSuites: { nodes: [] },
+                },
+              ],
+            },
+          },
+        },
+      })
+      .post("/graphql")
+      .reply(500, {});
+
+    await expect(
+      collectPullRequests({ owner: "me", repo: "r", since, auth, baseUrl })
+    ).rejects.toHaveProperty("partial.length", 1);
+    scope.done();
+  });
 });

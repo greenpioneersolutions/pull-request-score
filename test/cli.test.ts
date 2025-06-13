@@ -59,4 +59,31 @@ describe("cli", () => {
     expect(output.cycleTime.median).toBe(10);
     expect(output.pickupTime.p95).toBe(20);
   });
+
+  it("supports dry run", async () => {
+    process.argv = ["node", "cli", "foo/bar", "--token", "t", "--dry-run"];
+    await runCli();
+    expect(log).toHaveBeenCalledWith(
+      expect.stringContaining("Would fetch metrics"),
+    );
+    expect(
+      (require("../src/collectors/pullRequests") as any).collectPullRequests,
+    ).not.toHaveBeenCalled();
+  });
+
+  it("prints progress information", async () => {
+    const mod = require("../src/collectors/pullRequests");
+    mod.collectPullRequests.mockImplementation(async (opts: any) => {
+      opts.onProgress(1);
+      opts.onProgress(2);
+      return [];
+    });
+    const stderr = jest
+      .spyOn(process.stderr, "write")
+      .mockImplementation(() => true);
+    process.argv = ["node", "cli", "foo/bar", "--token", "t", "--progress"];
+    await runCli();
+    expect(stderr).toHaveBeenCalled();
+    stderr.mockRestore();
+  });
 });

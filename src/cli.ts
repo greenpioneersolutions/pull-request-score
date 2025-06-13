@@ -9,6 +9,7 @@ import {
 } from "./collectors/pullRequests.js";
 import { calculateCycleTime } from "./calculators/cycleTime.js";
 import { calculateReviewMetrics } from "./calculators/reviewMetrics.js";
+import { writeOutput } from "./output/writers.js";
 
 interface CliOptions {
   since: string;
@@ -126,24 +127,7 @@ export async function runCli(argv = process.argv): Promise<void> {
     pickupTime: stats(pickupTimes),
   };
 
-  if (opts.format === "csv") {
-    const rows = [
-      ["metric", "median", "p95"],
-      [
-        "cycleTime",
-        String(result.cycleTime.median ?? ""),
-        String(result.cycleTime.p95 ?? ""),
-      ],
-      [
-        "pickupTime",
-        String(result.pickupTime.median ?? ""),
-        String(result.pickupTime.p95 ?? ""),
-      ],
-    ];
-    console.log(rows.map((r) => r.join(",")).join("\n"));
-  } else {
-    console.log(JSON.stringify(result, null, 2));
-  }
+  writeOutput(result, { format: opts.format as "json" | "csv" });
 }
 
 export default runCli;

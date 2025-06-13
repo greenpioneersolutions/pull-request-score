@@ -32,7 +32,6 @@ export function calculateMetrics(
   let closedWithoutMerge = 0;
   let commitCount = 0;
   const outsizedPrs: number[] = [];
-  let reviewCountTotal = 0;
   let reviewedPrs = 0;
   let buildSuccess = 0;
   let checkSuiteCount = 0;
@@ -56,7 +55,6 @@ export function calculateMetrics(
     if (pr.reviews.length > 0) {
       reviewedPrs += 1;
       reviewCounts[pr.number] = pr.reviews.length;
-      reviewCountTotal += pr.reviews.length;
     }
 
     for (const cs of pr.checkSuites) {

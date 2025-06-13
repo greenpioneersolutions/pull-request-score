@@ -34,6 +34,8 @@ export interface CollectPullRequestsParams {
   auth: string;
   baseUrl?: string;
   onProgress?: (count: number) => void;
+  includeLabels?: string[];
+  excludeLabels?: string[];
 }
 
 function mapPR(pr: GraphqlPullRequest): RawPullRequest {
@@ -105,7 +107,20 @@ export async function collectPullRequests(
           hasNextPage = false;
           break;
         }
-        prs.push(mapPR(pr));
+        const mapped = mapPR(pr);
+        if (
+          params.includeLabels &&
+          !mapped.labels.some((l) => params.includeLabels!.includes(l.name))
+        ) {
+          continue;
+        }
+        if (
+          params.excludeLabels &&
+          mapped.labels.some((l) => params.excludeLabels!.includes(l.name))
+        ) {
+          continue;
+        }
+        prs.push(mapped);
         params.onProgress?.(prs.length);
       }
       if (hasNextPage) {

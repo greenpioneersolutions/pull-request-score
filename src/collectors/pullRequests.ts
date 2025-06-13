@@ -1,4 +1,13 @@
 import { makeGraphQLClient } from "../api/githubGraphql.js";
+import type {
+  PullRequest,
+  Author,
+  Review,
+  Comment,
+  Commit,
+  CheckSuite,
+} from "../models/index.js";
+
 export interface CollectPullRequestsParams {
   owner: string;
   repo: string;
@@ -7,49 +16,12 @@ export interface CollectPullRequestsParams {
   baseUrl?: string;
 }
 
-export interface RawAuthor {
-  login: string;
-}
-export interface RawReview {
-  id: string;
-  state: string;
-  submittedAt: string;
-  author: RawAuthor | null;
-}
-export interface RawComment {
-  id: string;
-  body: string;
-  createdAt: string;
-  author: RawAuthor | null;
-}
-export interface RawCommit {
-  oid: string;
-  messageHeadline: string;
-  committedDate: string;
-}
-export interface RawCheckSuite {
-  id: string;
-  status: string;
-  conclusion: string | null;
-  startedAt: string;
-  completedAt: string;
-}
-
-export interface RawPullRequest {
-  id: string;
-  number: number;
-  title: string;
-  state: string;
-  createdAt: string;
-  updatedAt: string;
-  mergedAt: string | null;
-  closedAt: string | null;
-  author: RawAuthor | null;
-  reviews: RawReview[];
-  comments: RawComment[];
-  commits: RawCommit[];
-  checkSuites: RawCheckSuite[];
-}
+export type RawAuthor = Author;
+export type RawReview = Review;
+export type RawComment = Comment;
+export type RawCommit = Commit;
+export type RawCheckSuite = CheckSuite;
+export type RawPullRequest = PullRequest;
 
 function mapPR(pr: any): RawPullRequest {
   return {

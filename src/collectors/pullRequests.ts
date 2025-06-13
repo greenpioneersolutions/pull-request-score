@@ -7,6 +7,10 @@ import type {
   Commit,
   CheckSuite,
 } from "../models/index.js";
+import type {
+  GraphqlPullRequest,
+  PullRequestsQuery,
+} from "./pullRequests.types.js";
 
 export type RawAuthor = Author;
 export type RawReview = Review;
@@ -32,7 +36,7 @@ export interface CollectPullRequestsParams {
   onProgress?: (count: number) => void;
 }
 
-function mapPR(pr: any): RawPullRequest {
+function mapPR(pr: GraphqlPullRequest): RawPullRequest {
   return {
     id: pr.id,
     number: pr.number,
@@ -43,24 +47,24 @@ function mapPR(pr: any): RawPullRequest {
     mergedAt: pr.mergedAt,
     closedAt: pr.closedAt,
     author: pr.author ? { login: pr.author.login } : null,
-    reviews: pr.reviews.nodes.map((r: any) => ({
+    reviews: pr.reviews.nodes.map((r) => ({
       id: r.id,
       state: r.state,
       submittedAt: r.submittedAt,
       author: r.author ? { login: r.author.login } : null,
     })),
-    comments: pr.comments.nodes.map((c: any) => ({
+    comments: pr.comments.nodes.map((c) => ({
       id: c.id,
       body: c.body,
       createdAt: c.createdAt,
       author: c.author ? { login: c.author.login } : null,
     })),
-    commits: pr.commits.nodes.map((c: any) => ({
+    commits: pr.commits.nodes.map((c) => ({
       oid: c.commit.oid,
       messageHeadline: c.commit.messageHeadline,
       committedDate: c.commit.committedDate,
     })),
-    checkSuites: pr.checkSuites.nodes.map((c: any) => ({
+    checkSuites: pr.checkSuites.nodes.map((c) => ({
       id: c.id,
       status: c.status,
       conclusion: c.conclusion,
@@ -70,7 +74,7 @@ function mapPR(pr: any): RawPullRequest {
     additions: pr.additions,
     deletions: pr.deletions,
     changedFiles: pr.changedFiles,
-    labels: pr.labels.nodes.map((l: any) => ({ name: l.name })),
+    labels: pr.labels.nodes.map((l) => ({ name: l.name })),
   };
 }
 
@@ -90,11 +94,11 @@ export async function collectPullRequests(
   let retries = 0;
   while (hasNextPage) {
     try {
-      const data: any = await client(query, {
+      const data = (await client(query, {
         owner: params.owner,
         repo: params.repo,
         cursor,
-      });
+      })) as PullRequestsQuery;
       const connection = data.repository.pullRequests;
       for (const pr of connection.nodes) {
         if (new Date(pr.updatedAt) < since) {

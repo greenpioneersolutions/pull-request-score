@@ -1,5 +1,6 @@
 import nock from "nock";
 import { collectPullRequests } from "../src/collectors/pullRequests";
+import type { GraphqlPullRequest } from "../src/collectors/pullRequests.types";
 
 const baseUrl = "http://g.test";
 const auth = "abc";
@@ -72,7 +73,7 @@ describe("collectPullRequests", () => {
                   commits: { nodes: [] },
                   checkSuites: { nodes: [] },
                 },
-              ],
+              ] as GraphqlPullRequest[],
             },
           },
         },
@@ -122,7 +123,7 @@ describe("collectPullRequests", () => {
                   commits: { nodes: [] },
                   checkSuites: { nodes: [] },
                 },
-              ],
+              ] as GraphqlPullRequest[],
             },
           },
         },
@@ -170,7 +171,7 @@ describe("collectPullRequests", () => {
                   commits: { nodes: [] },
                   checkSuites: { nodes: [] },
                 },
-              ],
+              ] as GraphqlPullRequest[],
             },
           },
         },
@@ -215,7 +216,7 @@ describe("collectPullRequests", () => {
                   commits: { nodes: [] },
                   checkSuites: { nodes: [] },
                 },
-              ],
+              ] as GraphqlPullRequest[],
             },
           },
         },

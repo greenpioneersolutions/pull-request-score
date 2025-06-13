@@ -122,4 +122,31 @@ describe("cli", () => {
     expect(errSpy).toHaveBeenCalled();
     errSpy.mockRestore();
   });
+
+  it("parses --since values", async () => {
+    jest.useFakeTimers().setSystemTime(new Date("2024-05-20T00:00:00Z"));
+    const { runCli } = require("../src/cli");
+    const mod = require("../src/collectors/pullRequests");
+    process.argv = ["node", "cli", "foo/bar", "--token", "t", "--since", "2d"];
+    await runCli();
+    jest.useRealTimers();
+    expect(mod.collectPullRequests).toHaveBeenCalledWith(
+      expect.objectContaining({
+        since: new Date("2024-05-18T00:00:00.000Z").toISOString(),
+      }),
+    );
+  });
+
+  it("errors on invalid --since", async () => {
+    const { runCli } = require("../src/cli");
+    const mod = require("../src/collectors/pullRequests");
+    process.argv = ["node", "cli", "foo/bar", "--token", "t", "--since", "bad"];
+    await runCli();
+    expect(error).toHaveBeenCalledWith(
+      expect.stringContaining("Invalid duration"),
+    );
+    expect(mod.collectPullRequests).not.toHaveBeenCalled();
+    expect(process.exitCode).toBe(1);
+    process.exitCode = 0;
+  });
 });

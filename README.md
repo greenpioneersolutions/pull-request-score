@@ -21,6 +21,8 @@ npx gh-pr-metrics octocat/hello-world --since 30d
 ```
 
 See the [metric reference](docs/metric-reference.md) for details.
+Documentation for the optional request throttling helper is available in
+[docs/rate-limiter.md](docs/rate-limiter.md).
 
 ## Development
 

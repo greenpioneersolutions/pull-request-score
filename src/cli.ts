@@ -19,6 +19,8 @@ interface CliOptions {
   dryRun?: boolean;
   progress?: boolean;
   output?: string;
+  includeLabels?: string;
+  excludeLabels?: string;
 }
 
 function stats(values: number[]): {
@@ -53,6 +55,14 @@ export async function runCli(argv = process.argv): Promise<void> {
     .option("--dry-run", "print options and exit")
     .option("--progress", "show progress during fetch")
     .option(
+      "--include-labels <labels>",
+      "only include PRs with these labels (comma separated)",
+    )
+    .option(
+      "--exclude-labels <labels>",
+      "exclude PRs with these labels (comma separated)",
+    )
+    .option(
       "--output <path|stdout|stderr>",
       "write metrics to file or stdout/stderr",
       "stdout",
@@ -79,6 +89,19 @@ export async function runCli(argv = process.argv): Promise<void> {
   }
   const since = new Date(Date.now() - sinceMs).toISOString();
 
+  const includeLabels = opts.includeLabels
+    ? opts.includeLabels
+        .split(",")
+        .map((l) => l.trim())
+        .filter(Boolean)
+    : undefined;
+  const excludeLabels = opts.excludeLabels
+    ? opts.excludeLabels
+        .split(",")
+        .map((l) => l.trim())
+        .filter(Boolean)
+    : undefined;
+
   if (opts.dryRun) {
     console.log(`Would fetch metrics for ${owner}/${repo} since ${opts.since}`);
     return;
@@ -97,6 +120,8 @@ export async function runCli(argv = process.argv): Promise<void> {
     auth: token as string,
     baseUrl: opts.baseUrl,
     onProgress,
+    includeLabels,
+    excludeLabels,
   };
 
   let prs: RawPullRequest[] = [];

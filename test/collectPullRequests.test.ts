@@ -188,6 +188,71 @@ describe("collectPullRequests", () => {
     expect(counts).toEqual([1]);
   });
 
+  it("filters by labels", async () => {
+    nock(baseUrl)
+      .post("/graphql")
+      .reply(200, {
+        data: {
+          repository: {
+            pullRequests: {
+              pageInfo: { hasNextPage: false, endCursor: null },
+              nodes: [
+                {
+                  id: "1",
+                  number: 1,
+                  title: "pr1",
+                  state: "OPEN",
+                  createdAt: "2024-01-01T00:00:00Z",
+                  updatedAt: "2024-01-02T00:00:00Z",
+                  mergedAt: null,
+                  closedAt: null,
+                  additions: 1,
+                  deletions: 1,
+                  changedFiles: 1,
+                  labels: { nodes: [{ name: "team-a" }] },
+                  author: { login: "a" },
+                  reviews: { nodes: [] },
+                  comments: { nodes: [] },
+                  commits: { nodes: [] },
+                  checkSuites: { nodes: [] },
+                },
+                {
+                  id: "2",
+                  number: 2,
+                  title: "pr2",
+                  state: "OPEN",
+                  createdAt: "2024-01-02T00:00:00Z",
+                  updatedAt: "2024-01-03T00:00:00Z",
+                  mergedAt: null,
+                  closedAt: null,
+                  additions: 2,
+                  deletions: 2,
+                  changedFiles: 1,
+                  labels: { nodes: [{ name: "team-b" }] },
+                  author: { login: "b" },
+                  reviews: { nodes: [] },
+                  comments: { nodes: [] },
+                  commits: { nodes: [] },
+                  checkSuites: { nodes: [] },
+                },
+              ] as GraphqlPullRequest[],
+            },
+          },
+        },
+      });
+
+    const prs = await collectPullRequests({
+      owner: "me",
+      repo: "r",
+      since,
+      auth,
+      baseUrl,
+      includeLabels: ["team-a"],
+      excludeLabels: ["team-b"],
+    });
+    expect(prs.map((p) => p.number)).toEqual([1]);
+  });
+
   it("returns partial results on error", async () => {
     const scope = nock(baseUrl)
       .post("/graphql")
@@ -225,7 +290,7 @@ describe("collectPullRequests", () => {
       .reply(500, {});
 
     await expect(
-      collectPullRequests({ owner: "me", repo: "r", since, auth, baseUrl })
+      collectPullRequests({ owner: "me", repo: "r", since, auth, baseUrl }),
     ).rejects.toHaveProperty("partial.length", 1);
     scope.done();
   });

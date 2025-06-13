@@ -123,6 +123,29 @@ describe("cli", () => {
     errSpy.mockRestore();
   });
 
+  it("passes label filters", async () => {
+    const { runCli } = require("../src/cli");
+    const mod = require("../src/collectors/pullRequests");
+    process.argv = [
+      "node",
+      "cli",
+      "foo/bar",
+      "--token",
+      "t",
+      "--include-labels",
+      "team-a,team-b",
+      "--exclude-labels",
+      "wip",
+    ];
+    await runCli();
+    expect(mod.collectPullRequests).toHaveBeenCalledWith(
+      expect.objectContaining({
+        includeLabels: ["team-a", "team-b"],
+        excludeLabels: ["wip"],
+      }),
+    );
+  });
+
   it("parses --since values", async () => {
     jest.useFakeTimers().setSystemTime(new Date("2024-05-20T00:00:00Z"));
     const { runCli } = require("../src/cli");

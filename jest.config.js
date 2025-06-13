@@ -12,6 +12,8 @@ export default {
     "^\./calculators/reviewMetrics.js$":
       "<rootDir>/src/calculators/reviewMetrics.ts",
     "^\./calculators/metrics.js$": "<rootDir>/src/calculators/metrics.ts",
+    "^\./calculators/ciMetrics.js$": "<rootDir>/src/calculators/ciMetrics.ts",
+    "^\./output/writers.js$": "<rootDir>/src/output/writers.ts",
   },
   globals: {
     "ts-jest": {

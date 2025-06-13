@@ -27,6 +27,13 @@ jest.mock("../src/collectors/pullRequests", () => ({
       checkSuites: [],
     },
   ]),
+  PartialResultsError: class PartialResultsError extends Error {
+    public partial: any[];
+    constructor(message: string, partial: any[]) {
+      super(message);
+      this.partial = partial;
+    }
+  },
 }));
 
 jest.mock("../src/calculators/cycleTime", () => ({
@@ -36,31 +43,40 @@ jest.mock("../src/calculators/reviewMetrics", () => ({
   calculateReviewMetrics: jest.fn(() => 20),
 }));
 
-import { runCli } from "../src/cli";
+import fs from "fs";
+import os from "os";
+import path from "path";
 
 describe("cli", () => {
   const origArgv = process.argv;
   const log = jest.spyOn(console, "log").mockImplementation(() => {});
   const error = jest.spyOn(console, "error").mockImplementation(() => {});
+  const stdout = jest
+    .spyOn(process.stdout, "write")
+    .mockImplementation(() => true);
 
   afterEach(() => {
     process.argv = origArgv;
     log.mockClear();
     error.mockClear();
+    stdout.mockClear();
+    jest.resetModules();
     jest.clearAllMocks();
   });
 
   it("prints JSON metrics", async () => {
+    const { runCli } = require("../src/cli");
     process.argv = ["node", "cli", "foo/bar", "--token", "t"];
     await runCli();
-    expect(log).toHaveBeenCalledTimes(1);
-    const firstCall = log.mock.calls[0]?.[0] as string;
+    expect(stdout).toHaveBeenCalledTimes(1);
+    const firstCall = stdout.mock.calls[0]?.[0] as string;
     const output = JSON.parse(firstCall);
     expect(output.cycleTime.median).toBe(10);
     expect(output.pickupTime.p95).toBe(20);
   });
 
   it("supports dry run", async () => {
+    const { runCli } = require("../src/cli");
     process.argv = ["node", "cli", "foo/bar", "--token", "t", "--dry-run"];
     await runCli();
     expect(log).toHaveBeenCalledWith(
@@ -72,6 +88,7 @@ describe("cli", () => {
   });
 
   it("prints progress information", async () => {
+    const { runCli } = require("../src/cli");
     const mod = require("../src/collectors/pullRequests");
     mod.collectPullRequests.mockImplementation(async (opts: any) => {
       opts.onProgress(1);
@@ -85,5 +102,51 @@ describe("cli", () => {
     await runCli();
     expect(stderr).toHaveBeenCalled();
     stderr.mockRestore();
+  });
+
+  it("writes metrics to stderr", async () => {
+    const { runCli } = require("../src/cli");
+    const errSpy = jest
+      .spyOn(process.stderr, "write")
+      .mockImplementation(() => true);
+    process.argv = [
+      "node",
+      "cli",
+      "foo/bar",
+      "--token",
+      "t",
+      "--output",
+      "stderr",
+    ];
+    await runCli();
+    expect(errSpy).toHaveBeenCalled();
+    errSpy.mockRestore();
+  });
+
+  it("parses --since values", async () => {
+    jest.useFakeTimers().setSystemTime(new Date("2024-05-20T00:00:00Z"));
+    const { runCli } = require("../src/cli");
+    const mod = require("../src/collectors/pullRequests");
+    process.argv = ["node", "cli", "foo/bar", "--token", "t", "--since", "2d"];
+    await runCli();
+    jest.useRealTimers();
+    expect(mod.collectPullRequests).toHaveBeenCalledWith(
+      expect.objectContaining({
+        since: new Date("2024-05-18T00:00:00.000Z").toISOString(),
+      }),
+    );
+  });
+
+  it("errors on invalid --since", async () => {
+    const { runCli } = require("../src/cli");
+    const mod = require("../src/collectors/pullRequests");
+    process.argv = ["node", "cli", "foo/bar", "--token", "t", "--since", "bad"];
+    await runCli();
+    expect(error).toHaveBeenCalledWith(
+      expect.stringContaining("Invalid duration"),
+    );
+    expect(mod.collectPullRequests).not.toHaveBeenCalled();
+    expect(process.exitCode).toBe(1);
+    process.exitCode = 0;
   });
 });

@@ -1,4 +1,4 @@
-import type { RawPullRequest } from "../collectors/pullRequests.js";
+import type { RawPullRequest } from '../collectors/pullRequests.js';
 
 export interface CiMetrics {
   /** Portion of check suites that completed successfully */
@@ -20,7 +20,7 @@ export function calculateCiMetrics(pr: RawPullRequest): CiMetrics {
 
   for (const suite of pr.checkSuites) {
     total += 1;
-    if (suite.conclusion === "SUCCESS") success += 1;
+    if (suite.conclusion === 'SUCCESS') success += 1;
     const start = Date.parse(suite.startedAt);
     const end = Date.parse(suite.completedAt);
     if (!Number.isNaN(start) && !Number.isNaN(end)) {

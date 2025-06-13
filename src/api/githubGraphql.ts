@@ -1,7 +1,7 @@
-import { graphql as baseGraphql } from "@octokit/graphql";
-import { Octokit } from "@octokit/core";
-import { throttling } from "@octokit/plugin-throttling";
-import Bottleneck from "bottleneck";
+import { graphql as baseGraphql } from '@octokit/graphql';
+import { Octokit } from '@octokit/core';
+import { throttling } from '@octokit/plugin-throttling';
+import Bottleneck from 'bottleneck';
 
 /**
  * Configuration options for {@link makeGraphQLClient}.
@@ -25,9 +25,7 @@ export interface GraphQLClientOptions {
  * @param opts - authentication, URL and throttling options
  * @returns a function compatible with `@octokit/graphql`
  */
-export const makeGraphQLClient = (
-  opts: GraphQLClientOptions,
-): typeof baseGraphql => {
+export const makeGraphQLClient = (opts: GraphQLClientOptions): typeof baseGraphql => {
   const rpm = opts.throttle?.requestsPerMinute ?? 5000 / 60;
 
   const limiter = new Bottleneck({
@@ -53,13 +51,8 @@ export const makeGraphQLClient = (
     headers: { authorization: `token ${opts.auth}` },
   });
 
-  const scheduledGraphql: typeof baseGraphql = (async (
-    query: any,
-    parameters?: any,
-  ) =>
-    limiter.schedule(() =>
-      graphqlWithAuth(query as any, parameters),
-    )) as typeof baseGraphql;
+  const scheduledGraphql: typeof baseGraphql = (async (query: any, parameters?: any) =>
+    limiter.schedule(() => graphqlWithAuth(query as any, parameters))) as typeof baseGraphql;
 
   scheduledGraphql.defaults = graphqlWithAuth.defaults;
   scheduledGraphql.endpoint = graphqlWithAuth.endpoint;

@@ -23,4 +23,3 @@ writeOutput(metrics, { destination: 'stderr' });
 
 When the destination is a writable stream, the output is written
 synchronously using the stream's `write` method.
-

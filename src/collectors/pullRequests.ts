@@ -1,12 +1,5 @@
-import { makeGraphQLClient } from "../api/githubGraphql.js";
-import type {
-  PullRequest,
-  Author,
-  Review,
-  Comment,
-  Commit,
-  CheckSuite,
-} from "../models/index.js";
+import { makeGraphQLClient } from '../api/githubGraphql.js';
+import type { PullRequest, Author, Review, Comment, Commit, CheckSuite } from '../models/index.js';
 
 export type RawAuthor = Author;
 export type RawReview = Review;
@@ -110,10 +103,7 @@ export async function collectPullRequests(
       }
       retries = 0;
     } catch (err: any) {
-      if (
-        retries < 5 &&
-        (err.status === 403 || /secondary rate/i.test(err.message))
-      ) {
+      if (retries < 5 && (err.status === 403 || /secondary rate/i.test(err.message))) {
         await new Promise((r) => setTimeout(r, 2 ** retries * 1000));
         retries += 1;
         continue;

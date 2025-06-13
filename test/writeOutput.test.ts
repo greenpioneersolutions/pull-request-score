@@ -26,9 +26,7 @@ describe('writeOutput', () => {
     const tmp = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'out-')), 'metrics.csv');
     writeOutput(metrics, { format: 'csv', destination: tmp });
     const data = fs.readFileSync(tmp, 'utf8');
-    expect(data).toBe(
-      'metric,median,p95\ncycleTime,1,2\npickupTime,3,4\n'
-    );
+    expect(data).toBe('metric,median,p95\ncycleTime,1,2\npickupTime,3,4\n');
     fs.unlinkSync(tmp);
   });
 

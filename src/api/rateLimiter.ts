@@ -1,4 +1,4 @@
-import Bottleneck from "bottleneck";
+import Bottleneck from 'bottleneck';
 
 export interface RateLimiterOptions {
   /** Requests allowed per minute */
@@ -24,8 +24,7 @@ export function createRateLimiter(
     reservoirRefreshInterval: 60 * 1000,
   });
 
-  return async <T>(fn: () => Promise<T>): Promise<T> =>
-    limiter.schedule(() => fn());
+  return async <T>(fn: () => Promise<T>): Promise<T> => limiter.schedule(() => fn());
 }
 
 export default createRateLimiter;

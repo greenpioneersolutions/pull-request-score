@@ -16,6 +16,10 @@ describe("calculateCycleTime", () => {
     comments: [],
     commits: [],
     checkSuites: [],
+    additions: 0,
+    deletions: 0,
+    changedFiles: 0,
+    labels: [],
   };
 
   it("handles same-day merge", () => {

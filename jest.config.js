@@ -11,6 +11,7 @@ export default {
     "^\./calculators/cycleTime.js$": "<rootDir>/src/calculators/cycleTime.ts",
     "^\./calculators/reviewMetrics.js$":
       "<rootDir>/src/calculators/reviewMetrics.ts",
+    "^\./calculators/metrics.js$": "<rootDir>/src/calculators/metrics.ts",
   },
   globals: {
     "ts-jest": {

@@ -61,4 +61,12 @@ export interface PullRequest {
   comments: Comment[];
   commits: Commit[];
   checkSuites: CheckSuite[];
+  /** Lines added in the pull request */
+  additions: number;
+  /** Lines removed in the pull request */
+  deletions: number;
+  /** Number of files changed */
+  changedFiles: number;
+  /** Labels applied to the pull request */
+  labels: { name: string }[];
 }

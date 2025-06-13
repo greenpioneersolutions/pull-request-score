@@ -16,6 +16,10 @@ describe("calculateReviewMetrics", () => {
     comments: [],
     commits: [],
     checkSuites: [],
+    additions: 0,
+    deletions: 0,
+    changedFiles: 0,
+    labels: [],
   };
 
   it("computes pickup time same day", () => {

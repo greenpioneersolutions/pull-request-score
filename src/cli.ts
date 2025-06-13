@@ -18,6 +18,7 @@ interface CliOptions {
   baseUrl?: string;
   dryRun?: boolean;
   progress?: boolean;
+  output?: string;
 }
 
 function stats(values: number[]): {
@@ -51,6 +52,11 @@ export async function runCli(argv = process.argv): Promise<void> {
     .option("--base-url <url>", "GitHub API base URL")
     .option("--dry-run", "print options and exit")
     .option("--progress", "show progress during fetch")
+    .option(
+      "--output <path|stdout|stderr>",
+      "write metrics to file or stdout/stderr",
+      "stdout",
+    )
     .allowExcessArguments(false);
 
   program.parse(argv);
@@ -127,7 +133,10 @@ export async function runCli(argv = process.argv): Promise<void> {
     pickupTime: stats(pickupTimes),
   };
 
-  writeOutput(result, { format: opts.format as "json" | "csv" });
+  writeOutput(result, {
+    format: opts.format as "json" | "csv",
+    destination: opts.output,
+  });
 }
 
 export default runCli;

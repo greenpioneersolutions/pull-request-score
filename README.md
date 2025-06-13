@@ -20,7 +20,21 @@ Run the CLI:
 npx gh-pr-metrics octocat/hello-world --since 30d
 ```
 
+### Output
+
+Metrics can be written using `writeOutput` which supports JSON and CSV formats
+as well as custom destinations:
+
+```ts
+import { writeOutput } from '@gh-pr-metrics/core';
+
+writeOutput(metrics, { format: 'csv', destination: 'metrics.csv' });
+// write to stderr instead of stdout
+writeOutput(metrics, { destination: 'stderr' });
+```
+
 See the [metric reference](docs/metric-reference.md) for details.
+For more details on output options see [docs/write-output.md](docs/write-output.md).
 
 ## Development
 

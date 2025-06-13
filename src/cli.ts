@@ -71,14 +71,16 @@ export async function runCli(argv = process.argv): Promise<void> {
     console.error("GitHub token required via --token or GH_TOKEN env");
     program.help({ error: true });
   }
-  const sinceMs =
-    typeof ms(opts.since) === "number" ? (ms(opts.since) as number) : ms("90d");
+  const sinceMs = ms(opts.since);
+  if (sinceMs === undefined) {
+    console.error(`Invalid duration for --since: ${opts.since}`);
+    process.exitCode = 1;
+    return;
+  }
   const since = new Date(Date.now() - sinceMs).toISOString();
 
   if (opts.dryRun) {
-    console.log(
-      `Would fetch metrics for ${owner}/${repo} since ${opts.since}`,
-    );
+    console.log(`Would fetch metrics for ${owner}/${repo} since ${opts.since}`);
     return;
   }
 
@@ -117,17 +119,17 @@ export async function runCli(argv = process.argv): Promise<void> {
   const cycleTimes: number[] = [];
   const pickupTimes: number[] = [];
   for (const pr of prs) {
-      try {
-        cycleTimes.push(calculateCycleTime(pr));
-      } catch {
-        /* ignore */
-      }
-      try {
-        pickupTimes.push(calculateReviewMetrics(pr));
-      } catch {
-        /* ignore */
-      }
+    try {
+      cycleTimes.push(calculateCycleTime(pr));
+    } catch {
+      /* ignore */
     }
+    try {
+      pickupTimes.push(calculateReviewMetrics(pr));
+    } catch {
+      /* ignore */
+    }
+  }
   const result = {
     cycleTime: stats(cycleTimes),
     pickupTime: stats(pickupTimes),

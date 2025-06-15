@@ -3,6 +3,7 @@
 [![npm version](https://img.shields.io/npm/v/@gh-pr-metrics/core)](https://www.npmjs.com/package/@gh-pr-metrics/core)
 [![CI](https://github.com/owner/repo/actions/workflows/ci.yml/badge.svg)](https://github.com/owner/repo/actions/workflows/ci.yml)
 [![coverage](https://img.shields.io/codecov/c/github/owner/repo)](https://codecov.io/gh/owner/repo)
+[![docs](https://img.shields.io/badge/docs-website-blue)](https://owner.github.io/pull-request-score/)
 
 `@gh-pr-metrics/core` collects and aggregates pull request data from GitHub. It was
 built to help teams understand how code moves through their repositories and to
@@ -19,12 +20,17 @@ many concurrent pull requests.
 
 ## Features
 
-- **Comprehensive metrics** – see [docs/metric-reference.md](docs/metric-reference.md) for the full list.
+ - **Comprehensive metrics** – see the [Metric Reference](https://owner.github.io/pull-request-score/docs/metric-reference) for the full list.
 - **Support for GitHub Enterprise** via the `--base-url` option.
 - **CLI and library usage** for flexibility.
 - **Label based filtering** so monorepo users can target a specific team or
   category of work.
 - Optional throttling helper for environments with strict API limits.
+
+## Documentation
+
+Browse the website for usage guides and API details at
+[https://owner.github.io/pull-request-score/](https://owner.github.io/pull-request-score/).
 
 ## Installation
 

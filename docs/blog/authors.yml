@@ -1,0 +1,9 @@
+owner:
+  name: Owner
+  title: Project Maintainer
+  url: https://github.com/owner
+  image_url: https://github.com/owner.png
+  page: true
+  socials:
+    github: owner
+    x: owner

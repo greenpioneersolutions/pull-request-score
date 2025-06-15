@@ -16,6 +16,7 @@ describe("calculateCycleTime", () => {
     comments: [],
     commits: [],
     checkSuites: [],
+    timelineItems: [],
     additions: 0,
     deletions: 0,
     changedFiles: 0,

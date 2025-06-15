@@ -6,13 +6,34 @@ const baseUrl = "http://g.test";
 const auth = "abc";
 
 jest.mock("../src/api/githubGraphql.js", () => ({
+  graphqlWithRetry: async (client: any, q: any, v: any) => {
+    let attempt = 0;
+    // simple retry on RATE_LIMITED
+    for (;;) {
+      try {
+        return await client(q, v);
+      } catch (e: any) {
+        if (e.errors?.[0]?.type === "RATE_LIMITED" && attempt < 5) {
+          attempt++;
+          continue;
+        }
+        throw e;
+      }
+    }
+  },
   makeGraphQLClient: () => async (query: string, variables: any) => {
     const res = await fetch(`${baseUrl}/graphql`, {
       method: "POST",
       headers: { authorization: `token ${auth}` },
       body: JSON.stringify({ query, variables }),
     });
-    return (await res.json()).data;
+    const json = await res.json();
+    if (json.errors) {
+      const err: any = new Error("GraphQL error");
+      err.errors = json.errors;
+      throw err;
+    }
+    return json.data;
   },
 }));
 
@@ -24,11 +45,13 @@ describe("collectPullRequests", () => {
     nock.cleanAll();
   });
 
-  it("fetches pages and filters by updatedAt", async () => {
+  it("retries on rate limit and handles pagination", async () => {
     const scope = nock(baseUrl, {
       reqheaders: { authorization: `token ${auth}` },
     })
       .post("/graphql", (body: any) => queryRegex.test(body.query))
+      .reply(200, { errors: [{ type: "RATE_LIMITED" }] })
+      .post("/graphql")
       .reply(200, {
         data: {
           repository: {
@@ -53,6 +76,7 @@ describe("collectPullRequests", () => {
                   comments: { nodes: [] },
                   commits: { nodes: [] },
                   checkSuites: { nodes: [] },
+                  timelineItems: { nodes: [] },
                 },
                 {
                   id: "2",
@@ -72,6 +96,7 @@ describe("collectPullRequests", () => {
                   comments: { nodes: [] },
                   commits: { nodes: [] },
                   checkSuites: { nodes: [] },
+                  timelineItems: { nodes: [] },
                 },
               ] as GraphqlPullRequest[],
             },
@@ -103,6 +128,7 @@ describe("collectPullRequests", () => {
                   comments: { nodes: [] },
                   commits: { nodes: [] },
                   checkSuites: { nodes: [] },
+                  timelineItems: { nodes: [] },
                 },
                 {
                   id: "4",
@@ -122,6 +148,7 @@ describe("collectPullRequests", () => {
                   comments: { nodes: [] },
                   commits: { nodes: [] },
                   checkSuites: { nodes: [] },
+                  timelineItems: { nodes: [] },
                 },
               ] as GraphqlPullRequest[],
             },
@@ -170,6 +197,7 @@ describe("collectPullRequests", () => {
                   comments: { nodes: [] },
                   commits: { nodes: [] },
                   checkSuites: { nodes: [] },
+                  timelineItems: { nodes: [] },
                 },
               ] as GraphqlPullRequest[],
             },
@@ -215,6 +243,7 @@ describe("collectPullRequests", () => {
                   comments: { nodes: [] },
                   commits: { nodes: [] },
                   checkSuites: { nodes: [] },
+                  timelineItems: { nodes: [] },
                 },
                 {
                   id: "2",
@@ -234,6 +263,7 @@ describe("collectPullRequests", () => {
                   comments: { nodes: [] },
                   commits: { nodes: [] },
                   checkSuites: { nodes: [] },
+                  timelineItems: { nodes: [] },
                 },
               ] as GraphqlPullRequest[],
             },
@@ -280,6 +310,7 @@ describe("collectPullRequests", () => {
                   comments: { nodes: [] },
                   commits: { nodes: [] },
                   checkSuites: { nodes: [] },
+                  timelineItems: { nodes: [] },
                 },
               ] as GraphqlPullRequest[],
             },

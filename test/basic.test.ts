@@ -8,6 +8,7 @@ const makeGraphQLClientMock = jest.fn(() => clientMock);
 
 jest.mock("../src/api/githubGraphql.js", () => ({
   makeGraphQLClient: makeGraphQLClientMock,
+  graphqlWithRetry: async (client: any, q: any, v: any) => client(q, v),
 }));
 
 import { collectPullRequests } from "../src/collectors/pullRequests";

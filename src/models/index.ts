@@ -31,6 +31,16 @@ export interface Commit {
   oid: string;
   messageHeadline: string;
   committedDate: string;
+  checkSuites: CommitCheckSuite[];
+}
+
+export interface CommitCheckSuite {
+  conclusion: string | null;
+}
+
+export interface TimelineItem {
+  type: string;
+  createdAt: string;
 }
 
 /**
@@ -61,6 +71,7 @@ export interface PullRequest {
   comments: Comment[];
   commits: Commit[];
   checkSuites: CheckSuite[];
+  timelineItems: TimelineItem[];
   /** Lines added in the pull request */
   additions: number;
   /** Lines removed in the pull request */

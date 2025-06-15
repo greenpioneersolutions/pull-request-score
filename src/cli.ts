@@ -24,6 +24,7 @@ interface CliOptions {
   includeLabels?: string;
   excludeLabels?: string;
   useCache?: boolean;
+  resume?: boolean;
   appId?: string;
   appPrivateKey?: string;
 }
@@ -60,6 +61,7 @@ export async function runCli(argv = process.argv): Promise<void> {
     .option("--dry-run", "print options and exit")
     .option("--progress", "show progress during fetch")
     .option("--use-cache", "use local SQLite cache")
+    .option("--resume", "resume previous run if possible")
     .option("--app-id <id>", "GitHub App ID")
     .option(
       "--app-private-key <path>",
@@ -139,6 +141,7 @@ export async function runCli(argv = process.argv): Promise<void> {
     includeLabels,
     excludeLabels,
     cache,
+    resume: opts.resume,
   };
 
   let prs: RawPullRequest[] = [];

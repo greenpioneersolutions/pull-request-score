@@ -1,6 +1,7 @@
 import { makeGraphQLClient, graphqlWithRetry } from "../api/githubGraphql.js";
 import { getAuthStrategy } from "../auth/getAuthStrategy.js";
 import { createHash } from "crypto";
+import { EventEmitter } from "events";
 import type { CacheStore } from "../cache/CacheStore.js";
 import type {
   PullRequest,
@@ -40,6 +41,10 @@ export interface CollectPullRequestsParams {
   includeLabels?: string[];
   excludeLabels?: string[];
   cache?: CacheStore;
+  /** Resume from last saved cursor if available */
+  resume?: boolean;
+  /** Event emitter to receive progress events */
+  events?: EventEmitter;
 }
 
 function mapPR(pr: GraphqlPullRequest): RawPullRequest {
@@ -104,7 +109,18 @@ export async function collectPullRequests(
   });
   const since = new Date(params.since);
   const prs: RawPullRequest[] = [];
+  const cacheCursorKey = `cursor:${params.owner}/${params.repo}`;
+  const persistEvery = 5;
+  let pages = 0;
   let cursor: string | null = null;
+  let lastUpdated = "";
+  if (params.resume && params.cache) {
+    const saved = params.cache.get<{ cursor: string | null; updatedAt: string }>(
+      cacheCursorKey,
+    );
+    if (saved?.cursor) cursor = saved.cursor;
+    if (saved?.updatedAt) lastUpdated = saved.updatedAt;
+  }
   let hasNextPage = true;
   const query = `query($owner:String!,$repo:String!,$cursor:String){
     repository(owner:$owner,name:$repo){
@@ -139,6 +155,7 @@ export async function collectPullRequests(
         params.cache?.set(key, data);
       }
       const connection = data!.repository.pullRequests;
+      pages += 1;
       for (const pr of connection.nodes) {
         if (new Date(pr.updatedAt) < since) {
           hasNextPage = false;
@@ -164,6 +181,11 @@ export async function collectPullRequests(
         hasNextPage = connection.pageInfo.hasNextPage;
         cursor = connection.pageInfo.endCursor;
       }
+      lastUpdated = connection.nodes[connection.nodes.length - 1]?.updatedAt ?? lastUpdated;
+      params.events?.emit("progress", { cursor, updatedAt: lastUpdated });
+      if (params.resume && params.cache && pages % persistEvery === 0) {
+        params.cache.set(cacheCursorKey, { cursor, updatedAt: lastUpdated });
+      }
       retries = 0;
     } catch (err: any) {
       if (
@@ -174,6 +196,10 @@ export async function collectPullRequests(
         retries += 1;
         continue;
       }
+      if (params.resume && params.cache) {
+        params.cache.set(cacheCursorKey, { cursor, updatedAt: lastUpdated });
+      }
+      params.events?.emit("progress", { cursor, updatedAt: lastUpdated });
       if (prs.length) {
         throw new PartialResultsError(err.message, prs);
       }
@@ -182,6 +208,9 @@ export async function collectPullRequests(
   }
 
   prs.sort((a, b) => Date.parse(a.createdAt) - Date.parse(b.createdAt));
+  if (params.resume && params.cache) {
+    params.cache.set(cacheCursorKey, { cursor: null, updatedAt: lastUpdated }, 1);
+  }
   return prs;
 }
 

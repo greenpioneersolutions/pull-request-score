@@ -41,7 +41,8 @@ describe("makeGraphQLClient", () => {
   it("injects auth header", async () => {
     const client = makeGraphQLClient({ auth: "token123" });
     await client("{ test }");
-    expect(graphqlFn.defaults).toHaveBeenCalledWith(
+    expect(graphqlFn).toHaveBeenCalledWith(
+      "{ test }",
       expect.objectContaining({
         headers: { authorization: "token token123" },
       }),
@@ -59,5 +60,19 @@ describe("makeGraphQLClient", () => {
     await client("{ test }");
     expect(instance.schedule).toHaveBeenCalledTimes(1);
     expect(instance.opts.reservoir).toBe(10);
+  });
+
+  it("uses auth strategy", async () => {
+    const client = makeGraphQLClient({
+      authStrategy: async () => "app-token",
+    });
+    await client("{ test }", { foo: "bar" });
+    expect(graphqlFn).toHaveBeenCalledWith(
+      "{ test }",
+      expect.objectContaining({
+        foo: "bar",
+        headers: { authorization: "token app-token" },
+      }),
+    );
   });
 });

@@ -32,6 +32,9 @@ export default {
     "^\.\.\/calculators/cycleTime.js$": "<rootDir>/src/calculators/cycleTime.ts",
     "^\.\.\/calculators/reviewMetrics.js$": "<rootDir>/src/calculators/reviewMetrics.ts",
     "^\./cache/sqliteStore.js$": "<rootDir>/src/cache/sqliteStore.ts",
+    "^\\./auth/getAuthStrategy.js$": "<rootDir>/src/auth/getAuthStrategy.ts",
+    "^\\.\\./src/auth/getAuthStrategy.js$": "<rootDir>/src/auth/getAuthStrategy.ts",
+    "^\\.\\./auth/getAuthStrategy.js$": "<rootDir>/src/auth/getAuthStrategy.ts",
   },
   globals: {
     "ts-jest": {

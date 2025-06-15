@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { Command } from "commander";
 import ms from "ms";
+import fs from "fs";
 import {
   collectPullRequests,
   PartialResultsError,
@@ -23,6 +24,8 @@ interface CliOptions {
   includeLabels?: string;
   excludeLabels?: string;
   useCache?: boolean;
+  appId?: string;
+  appPrivateKey?: string;
 }
 
 function stats(values: number[]): {
@@ -57,6 +60,11 @@ export async function runCli(argv = process.argv): Promise<void> {
     .option("--dry-run", "print options and exit")
     .option("--progress", "show progress during fetch")
     .option("--use-cache", "use local SQLite cache")
+    .option("--app-id <id>", "GitHub App ID")
+    .option(
+      "--app-private-key <path>",
+      "path to GitHub App private key file",
+    )
     .option(
       "--include-labels <labels>",
       "only include PRs with these labels (comma separated)",
@@ -74,6 +82,9 @@ export async function runCli(argv = process.argv): Promise<void> {
 
   program.parse(argv);
   const opts = program.opts<CliOptions>();
+  if (opts.appId) process.env["GH_APP_ID"] = opts.appId;
+  if (opts.appPrivateKey)
+    process.env["GH_APP_PK"] = fs.readFileSync(opts.appPrivateKey, "utf8");
   const [owner, repo] = (program.args[0] || "").split("/");
   const token = opts.token ?? process.env["GH_TOKEN"];
   if (!owner || !repo) {

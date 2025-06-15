@@ -1,4 +1,5 @@
 import { makeGraphQLClient, graphqlWithRetry } from "../api/githubGraphql.js";
+import { getAuthStrategy } from "../auth/getAuthStrategy.js";
 import { createHash } from "crypto";
 import type { CacheStore } from "../cache/CacheStore.js";
 import type {
@@ -94,7 +95,11 @@ export async function collectPullRequests(
   params: CollectPullRequestsParams,
 ): Promise<RawPullRequest[]> {
   const client = makeGraphQLClient({
-    auth: params.auth,
+    authStrategy: getAuthStrategy({
+      owner: params.owner,
+      token: params.auth,
+      baseUrl: params.baseUrl,
+    }),
     baseUrl: params.baseUrl,
   });
   const since = new Date(params.since);

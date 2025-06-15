@@ -1,4 +1,7 @@
 import nock from "nock";
+import fs from "fs";
+import os from "os";
+import path from "path";
 import { collectPullRequests } from "../src/collectors/pullRequests";
 import type { GraphqlPullRequest } from "../src/collectors/pullRequests.types";
 
@@ -324,5 +327,34 @@ describe("collectPullRequests", () => {
       collectPullRequests({ owner: "me", repo: "r", since, auth, baseUrl }),
     ).rejects.toHaveProperty("partial.length", 1);
     scope.done();
+  });
+
+  it("uses cache on second run", async () => {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "cache-"));
+    const origHome = process.env["HOME"];
+    process.env["HOME"] = tmp;
+    const { sqliteStore } = require("../src/cache/sqliteStore");
+    const cache = sqliteStore();
+
+    const scope = nock(baseUrl)
+      .post("/graphql")
+      .reply(200, {
+        data: {
+          repository: {
+            pullRequests: {
+              pageInfo: { hasNextPage: false, endCursor: null },
+              nodes: [] as GraphqlPullRequest[],
+            },
+          },
+        },
+      });
+
+    await collectPullRequests({ owner: "me", repo: "r", since, auth, baseUrl, cache });
+    scope.done();
+
+    await collectPullRequests({ owner: "me", repo: "r", since, auth, baseUrl, cache });
+
+    process.env["HOME"] = origHome;
+    fs.rmSync(tmp, { recursive: true, force: true });
   });
 });

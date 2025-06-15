@@ -31,6 +31,7 @@ export default {
     "^\.\.\/plugins/registry.js$": "<rootDir>/src/plugins/registry.ts",
     "^\.\.\/calculators/cycleTime.js$": "<rootDir>/src/calculators/cycleTime.ts",
     "^\.\.\/calculators/reviewMetrics.js$": "<rootDir>/src/calculators/reviewMetrics.ts",
+    "^\./cache/sqliteStore.js$": "<rootDir>/src/cache/sqliteStore.ts",
   },
   globals: {
     "ts-jest": {

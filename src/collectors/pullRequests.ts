@@ -1,4 +1,6 @@
 import { makeGraphQLClient, graphqlWithRetry } from "../api/githubGraphql.js";
+import { createHash } from "crypto";
+import type { CacheStore } from "../cache/CacheStore.js";
 import type {
   PullRequest,
   Author,
@@ -36,6 +38,7 @@ export interface CollectPullRequestsParams {
   onProgress?: (count: number) => void;
   includeLabels?: string[];
   excludeLabels?: string[];
+  cache?: CacheStore;
 }
 
 function mapPR(pr: GraphqlPullRequest): RawPullRequest {
@@ -120,12 +123,17 @@ export async function collectPullRequests(
   let retries = 0;
   while (hasNextPage) {
     try {
-      const data = (await graphqlWithRetry<PullRequestsQuery>(client, query, {
-        owner: params.owner,
-        repo: params.repo,
-        cursor,
-      })) as PullRequestsQuery;
-      const connection = data.repository.pullRequests;
+      const key: string = createHash("sha1").update(String(cursor)).digest("hex");
+      let data: PullRequestsQuery | undefined = params.cache?.get<PullRequestsQuery>(key);
+      if (!data) {
+        data = (await graphqlWithRetry<PullRequestsQuery>(client, query, {
+          owner: params.owner,
+          repo: params.repo,
+          cursor,
+        })) as PullRequestsQuery;
+        params.cache?.set(key, data);
+      }
+      const connection = data!.repository.pullRequests;
       for (const pr of connection.nodes) {
         if (new Date(pr.updatedAt) < since) {
           hasNextPage = false;

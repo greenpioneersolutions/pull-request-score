@@ -7,6 +7,7 @@ import {
   RawPullRequest,
   CollectPullRequestsParams,
 } from "./collectors/pullRequests.js";
+import { sqliteStore } from "./cache/sqliteStore.js";
 import { calculateCycleTime } from "./calculators/cycleTime.js";
 import { calculateReviewMetrics } from "./calculators/reviewMetrics.js";
 import { writeOutput } from "./output/writers.js";
@@ -21,6 +22,7 @@ interface CliOptions {
   output?: string;
   includeLabels?: string;
   excludeLabels?: string;
+  useCache?: boolean;
 }
 
 function stats(values: number[]): {
@@ -54,6 +56,7 @@ export async function runCli(argv = process.argv): Promise<void> {
     .option("--base-url <url>", "GitHub API base URL")
     .option("--dry-run", "print options and exit")
     .option("--progress", "show progress during fetch")
+    .option("--use-cache", "use local SQLite cache")
     .option(
       "--include-labels <labels>",
       "only include PRs with these labels (comma separated)",
@@ -113,6 +116,8 @@ export async function runCli(argv = process.argv): Promise<void> {
       }
     : undefined;
 
+  const cache = opts.useCache ? sqliteStore() : undefined;
+
   const collectOpts: CollectPullRequestsParams = {
     owner: owner as string,
     repo: repo as string,
@@ -122,6 +127,7 @@ export async function runCli(argv = process.argv): Promise<void> {
     onProgress,
     includeLabels,
     excludeLabels,
+    cache,
   };
 
   let prs: RawPullRequest[] = [];

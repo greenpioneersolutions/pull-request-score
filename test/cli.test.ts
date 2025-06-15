@@ -42,6 +42,9 @@ jest.mock("../src/calculators/cycleTime", () => ({
 jest.mock("../src/calculators/reviewMetrics", () => ({
   calculateReviewMetrics: jest.fn(() => 20),
 }));
+jest.mock("../src/cache/sqliteStore", () => ({
+  sqliteStore: jest.fn(() => ({})),
+}));
 
 import fs from "fs";
 import os from "os";
@@ -143,6 +146,18 @@ describe("cli", () => {
         includeLabels: ["team-a", "team-b"],
         excludeLabels: ["wip"],
       }),
+    );
+  });
+
+  it("uses cache when enabled", async () => {
+    const { runCli } = require("../src/cli");
+    const mod = require("../src/collectors/pullRequests");
+    const cacheMod = require("../src/cache/sqliteStore");
+    process.argv = ["node", "cli", "foo/bar", "--token", "t", "--use-cache"];
+    await runCli();
+    expect(cacheMod.sqliteStore).toHaveBeenCalled();
+    expect(mod.collectPullRequests).toHaveBeenCalledWith(
+      expect.objectContaining({ cache: expect.any(Object) })
     );
   });
 

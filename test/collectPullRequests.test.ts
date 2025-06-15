@@ -355,4 +355,72 @@ describe("collectPullRequests", () => {
     process.env["HOME"] = origHome;
     fs.rmSync(tmp, { recursive: true, force: true });
   });
+
+  it("resumes after interruption", async () => {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "cache-"));
+    const origHome = process.env["HOME"];
+    process.env["HOME"] = tmp;
+    const { sqliteStore } = require("../src/cache/sqliteStore");
+    const cache = sqliteStore();
+
+    const makePr = (n: number): GraphqlPullRequest => ({
+      id: String(n),
+      number: n,
+      title: `pr${n}`,
+      state: "OPEN",
+      createdAt: `2024-01-0${n}T00:00:00Z`,
+      updatedAt: `2024-01-0${n}T00:00:00Z`,
+      mergedAt: null,
+      closedAt: null,
+      additions: 1,
+      deletions: 1,
+      changedFiles: 1,
+      labels: { nodes: [] },
+      author: { login: "a" },
+      reviews: { nodes: [] },
+      comments: { nodes: [] },
+      commits: { nodes: [] },
+      checkSuites: { nodes: [] },
+      timelineItems: { nodes: [] },
+    });
+
+    cache.set("cursor:me/r", { cursor: "c5", updatedAt: "2024-01-05T00:00:00Z" });
+    nock(baseUrl)
+      .post("/graphql", (body: any) => body.variables.cursor === "c5")
+      .reply(200, {
+        data: {
+          repository: {
+            pullRequests: {
+              pageInfo: { hasNextPage: true, endCursor: "c6" },
+              nodes: [makePr(6)] as GraphqlPullRequest[],
+            },
+          },
+        },
+      })
+      .post("/graphql")
+      .reply(200, {
+        data: {
+          repository: {
+            pullRequests: {
+              pageInfo: { hasNextPage: false, endCursor: null },
+              nodes: [makePr(7)] as GraphqlPullRequest[],
+            },
+          },
+        },
+      });
+    const prs = await collectPullRequests({
+      owner: "me",
+      repo: "r",
+      since,
+      auth,
+      baseUrl,
+      cache,
+      resume: true,
+    });
+
+    expect(prs.map((p) => p.number)).toEqual([6, 7]);
+
+    process.env["HOME"] = origHome;
+    fs.rmSync(tmp, { recursive: true, force: true });
+  });
 });

@@ -16,10 +16,12 @@ export function calculateCommentDensity(pr: RawPullRequest): number {
 }
 
 import { register } from "../plugins/registry.js";
+// Stryker disable all
 register({
   slug: "comment_density",
   description: "Comments per line changed",
   calculate: calculateCommentDensity,
 });
+// Stryker restore all
 
 export default calculateCommentDensity;

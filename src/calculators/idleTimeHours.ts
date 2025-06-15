@@ -46,10 +46,12 @@ export function calculateIdleTimeHours(pr: RawPullRequest): number {
 }
 
 import { register } from "../plugins/registry.js";
+// Stryker disable all
 register({
   slug: "idle_time_hours",
   description: "Time spent idle beyond one day",
   calculate: calculateIdleTimeHours,
 });
+// Stryker restore all
 
 export default calculateIdleTimeHours;

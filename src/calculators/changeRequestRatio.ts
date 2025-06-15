@@ -21,10 +21,12 @@ export function calculateChangeRequestRatio(pr: RawPullRequest): number {
 }
 
 import { register } from "../plugins/registry.js";
+// Stryker disable all
 register({
   slug: "change_request_ratio",
   description: "Ratio of reviews requesting changes",
   calculate: calculateChangeRequestRatio,
 });
+// Stryker restore all
 
 export default calculateChangeRequestRatio;

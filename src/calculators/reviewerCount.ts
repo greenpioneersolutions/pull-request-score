@@ -21,10 +21,12 @@ export function calculateReviewerCount(pr: RawPullRequest): number {
 }
 
 import { register } from "../plugins/registry.js";
+// Stryker disable all
 register({
   slug: "reviewer_count",
   description: "Number of unique reviewers",
   calculate: calculateReviewerCount,
 });
+// Stryker restore all
 
 export default calculateReviewerCount;

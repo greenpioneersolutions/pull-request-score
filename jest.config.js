@@ -3,6 +3,7 @@ export default {
   preset: "ts-jest/presets/default-esm",
   testEnvironment: "node",
   testMatch: ["**/test/**/*.test.ts"],
+  testPathIgnorePatterns: ["<rootDir>/.stryker-tmp"],
   moduleNameMapper: {
     "^\.\./api/githubGraphql.js$": "<rootDir>/src/api/githubGraphql.ts",
     "^\.\./src/api/githubGraphql.js$": "<rootDir>/src/api/githubGraphql.ts",

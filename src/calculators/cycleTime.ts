@@ -21,10 +21,12 @@ export function calculateCycleTime(pr: RawPullRequest): number {
 }
 
 import { register } from "../plugins/registry.js";
+// Stryker disable all
 register({
   slug: "cycle_time",
   description: "Hours from creation to merge",
   calculate: calculateCycleTime,
 });
+// Stryker restore all
 
 export default calculateCycleTime;

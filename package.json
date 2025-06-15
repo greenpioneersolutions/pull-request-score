@@ -17,7 +17,7 @@
     "build": "tsc",
     "lint": "eslint . --ext .ts",
     "format": "prettier --write .",
-    "test": "pnpm exec jest",
+    "test": "pnpm exec jest --coverage",
     "release": "semantic-release"
   },
   "engines": {
@@ -26,6 +26,8 @@
   "author": "Jason <jason@example.com>",
   "license": "MIT",
   "devDependencies": {
+    "@stryker-mutator/core": "^9.0.1",
+    "@stryker-mutator/jest-runner": "^9.0.1",
     "@types/better-sqlite3": "^7.6.13",
     "@types/jest": "^29.5.14",
     "@types/ms": "^0.7.31",
@@ -41,10 +43,10 @@
     "typescript": "^5.4.5"
   },
   "dependencies": {
+    "@octokit/auth-app": "^8.0.1",
     "@octokit/core": "^7.0.2",
     "@octokit/graphql": "^9.0.1",
     "@octokit/plugin-throttling": "^11.0.1",
-    "@octokit/auth-app": "^8.0.1",
     "@octokit/request": "^10.0.2",
     "better-sqlite3": "^11.10.0",
     "commander": "^11.0.0",

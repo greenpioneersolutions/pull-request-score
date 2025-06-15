@@ -8,6 +8,7 @@ const makeGraphQLClientMock = jest.fn(() => clientMock);
 
 jest.mock("../src/api/githubGraphql.js", () => ({
   makeGraphQLClient: makeGraphQLClientMock,
+  graphqlWithRetry: async (client: any, q: any, v: any) => client(q, v),
 }));
 
 import { collectPullRequests } from "../src/collectors/pullRequests";
@@ -26,10 +27,12 @@ describe("collectPullRequests", () => {
       baseUrl: "http://g.test",
     });
 
-    expect(makeGraphQLClientMock).toHaveBeenCalledWith({
-      auth: "token123",
-      baseUrl: "http://g.test",
-    });
+    expect(makeGraphQLClientMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        authStrategy: expect.any(Function),
+        baseUrl: "http://g.test",
+      }),
+    );
     expect(clientMock).toHaveBeenCalledTimes(1);
     expect(clientMock.mock.calls[0][1]).toEqual(
       expect.objectContaining({ owner: "me", repo: "repo" })

@@ -13,3 +13,4 @@ jobs:
           version: 8
       - run: pnpm install
       - run: pnpm test
+      - run: pnpm stryker run

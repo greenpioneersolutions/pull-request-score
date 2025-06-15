@@ -8,7 +8,9 @@ import Bottleneck from "bottleneck";
  */
 export interface GraphQLClientOptions {
   /** Personal access token or GitHub App installation token. */
-  auth: string;
+  auth?: string;
+  /** Optional strategy that returns a token for each request. */
+  authStrategy?: () => Promise<string>;
   /** Optional GitHub Enterprise URL, defaults to public GitHub. */
   baseUrl?: string;
   /**
@@ -39,7 +41,6 @@ export const makeGraphQLClient = (
   const OctokitWithThrottle = Octokit.plugin(throttling);
 
   const octokit = new OctokitWithThrottle({
-    auth: opts.auth,
     baseUrl: opts.baseUrl,
     throttle: {
       onRateLimit: () => true,
@@ -47,22 +48,53 @@ export const makeGraphQLClient = (
     },
   });
 
-  const graphqlWithAuth = baseGraphql.defaults({
+  const graphqlBase = baseGraphql.defaults({
     request: octokit.request,
     baseUrl: opts.baseUrl,
-    headers: { authorization: `token ${opts.auth}` },
   });
 
   const scheduledGraphql: typeof baseGraphql = (async (
     query: any,
     parameters?: any,
-  ) =>
-    limiter.schedule(() =>
-      graphqlWithAuth(query as any, parameters),
-    )) as typeof baseGraphql;
+  ) => {
+    const token = opts.authStrategy
+      ? await opts.authStrategy()
+      : (opts.auth as string);
+    return limiter.schedule(() =>
+      graphqlBase(query as any, {
+        ...parameters,
+        headers: {
+          ...(parameters?.headers ?? {}),
+          authorization: `token ${token}`,
+        },
+      }),
+    );
+  }) as typeof baseGraphql;
 
-  scheduledGraphql.defaults = graphqlWithAuth.defaults;
-  scheduledGraphql.endpoint = graphqlWithAuth.endpoint;
+  scheduledGraphql.defaults = graphqlBase.defaults;
+  scheduledGraphql.endpoint = graphqlBase.endpoint;
 
   return scheduledGraphql;
 };
+
+export async function graphqlWithRetry<T>(
+  client: typeof baseGraphql,
+  query: any,
+  variables?: any,
+  maxAttempts = 5,
+): Promise<T> {
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    try {
+      return (await client(query, variables)) as T;
+    } catch (err: any) {
+      const code =
+        err.errors?.[0]?.type ?? err.errors?.[0]?.extensions?.code;
+      if (code === "RATE_LIMITED" && attempt < maxAttempts - 1) {
+        await new Promise((r) => setTimeout(r, 2 ** attempt * 1000));
+        continue;
+      }
+      throw err;
+    }
+  }
+  throw new Error("unreachable");
+}

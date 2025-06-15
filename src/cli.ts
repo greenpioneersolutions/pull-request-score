@@ -1,12 +1,14 @@
 #!/usr/bin/env node
 import { Command } from "commander";
 import ms from "ms";
+import fs from "fs";
 import {
   collectPullRequests,
   PartialResultsError,
   RawPullRequest,
   CollectPullRequestsParams,
 } from "./collectors/pullRequests.js";
+import { sqliteStore } from "./cache/sqliteStore.js";
 import { calculateCycleTime } from "./calculators/cycleTime.js";
 import { calculateReviewMetrics } from "./calculators/reviewMetrics.js";
 import { writeOutput } from "./output/writers.js";
@@ -19,6 +21,12 @@ interface CliOptions {
   dryRun?: boolean;
   progress?: boolean;
   output?: string;
+  includeLabels?: string;
+  excludeLabels?: string;
+  useCache?: boolean;
+  resume?: boolean;
+  appId?: string;
+  appPrivateKey?: string;
 }
 
 function stats(values: number[]): {
@@ -52,6 +60,21 @@ export async function runCli(argv = process.argv): Promise<void> {
     .option("--base-url <url>", "GitHub API base URL")
     .option("--dry-run", "print options and exit")
     .option("--progress", "show progress during fetch")
+    .option("--use-cache", "use local SQLite cache")
+    .option("--resume", "resume previous run if possible")
+    .option("--app-id <id>", "GitHub App ID")
+    .option(
+      "--app-private-key <path>",
+      "path to GitHub App private key file",
+    )
+    .option(
+      "--include-labels <labels>",
+      "only include PRs with these labels (comma separated)",
+    )
+    .option(
+      "--exclude-labels <labels>",
+      "exclude PRs with these labels (comma separated)",
+    )
     .option(
       "--output <path|stdout|stderr>",
       "write metrics to file or stdout/stderr",
@@ -61,6 +84,9 @@ export async function runCli(argv = process.argv): Promise<void> {
 
   program.parse(argv);
   const opts = program.opts<CliOptions>();
+  if (opts.appId) process.env["GH_APP_ID"] = opts.appId;
+  if (opts.appPrivateKey)
+    process.env["GH_APP_PK"] = fs.readFileSync(opts.appPrivateKey, "utf8");
   const [owner, repo] = (program.args[0] || "").split("/");
   const token = opts.token ?? process.env["GH_TOKEN"];
   if (!owner || !repo) {
@@ -79,6 +105,19 @@ export async function runCli(argv = process.argv): Promise<void> {
   }
   const since = new Date(Date.now() - sinceMs).toISOString();
 
+  const includeLabels = opts.includeLabels
+    ? opts.includeLabels
+        .split(",")
+        .map((l) => l.trim())
+        .filter(Boolean)
+    : undefined;
+  const excludeLabels = opts.excludeLabels
+    ? opts.excludeLabels
+        .split(",")
+        .map((l) => l.trim())
+        .filter(Boolean)
+    : undefined;
+
   if (opts.dryRun) {
     console.log(`Would fetch metrics for ${owner}/${repo} since ${opts.since}`);
     return;
@@ -90,6 +129,8 @@ export async function runCli(argv = process.argv): Promise<void> {
       }
     : undefined;
 
+  const cache = opts.useCache ? sqliteStore() : undefined;
+
   const collectOpts: CollectPullRequestsParams = {
     owner: owner as string,
     repo: repo as string,
@@ -97,6 +138,10 @@ export async function runCli(argv = process.argv): Promise<void> {
     auth: token as string,
     baseUrl: opts.baseUrl,
     onProgress,
+    includeLabels,
+    excludeLabels,
+    cache,
+    resume: opts.resume,
   };
 
   let prs: RawPullRequest[] = [];

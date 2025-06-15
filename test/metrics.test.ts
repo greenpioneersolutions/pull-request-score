@@ -16,6 +16,7 @@ describe("calculateMetrics", () => {
     comments: [],
     commits: [],
     checkSuites: [],
+    timelineItems: [],
     additions: 5,
     deletions: 0,
     changedFiles: 1,

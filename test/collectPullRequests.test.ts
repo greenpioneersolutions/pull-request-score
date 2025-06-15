@@ -1,4 +1,7 @@
 import nock from "nock";
+import fs from "fs";
+import os from "os";
+import path from "path";
 import { collectPullRequests } from "../src/collectors/pullRequests";
 import type { GraphqlPullRequest } from "../src/collectors/pullRequests.types";
 
@@ -6,13 +9,34 @@ const baseUrl = "http://g.test";
 const auth = "abc";
 
 jest.mock("../src/api/githubGraphql.js", () => ({
+  graphqlWithRetry: async (client: any, q: any, v: any) => {
+    let attempt = 0;
+    // simple retry on RATE_LIMITED
+    for (;;) {
+      try {
+        return await client(q, v);
+      } catch (e: any) {
+        if (e.errors?.[0]?.type === "RATE_LIMITED" && attempt < 5) {
+          attempt++;
+          continue;
+        }
+        throw e;
+      }
+    }
+  },
   makeGraphQLClient: () => async (query: string, variables: any) => {
     const res = await fetch(`${baseUrl}/graphql`, {
       method: "POST",
       headers: { authorization: `token ${auth}` },
       body: JSON.stringify({ query, variables }),
     });
-    return (await res.json()).data;
+    const json = await res.json();
+    if (json.errors) {
+      const err: any = new Error("GraphQL error");
+      err.errors = json.errors;
+      throw err;
+    }
+    return json.data;
   },
 }));
 
@@ -24,11 +48,13 @@ describe("collectPullRequests", () => {
     nock.cleanAll();
   });
 
-  it("fetches pages and filters by updatedAt", async () => {
+  it("retries on rate limit and handles pagination", async () => {
     const scope = nock(baseUrl, {
       reqheaders: { authorization: `token ${auth}` },
     })
       .post("/graphql", (body: any) => queryRegex.test(body.query))
+      .reply(200, { errors: [{ type: "RATE_LIMITED" }] })
+      .post("/graphql")
       .reply(200, {
         data: {
           repository: {
@@ -53,6 +79,7 @@ describe("collectPullRequests", () => {
                   comments: { nodes: [] },
                   commits: { nodes: [] },
                   checkSuites: { nodes: [] },
+                  timelineItems: { nodes: [] },
                 },
                 {
                   id: "2",
@@ -72,6 +99,7 @@ describe("collectPullRequests", () => {
                   comments: { nodes: [] },
                   commits: { nodes: [] },
                   checkSuites: { nodes: [] },
+                  timelineItems: { nodes: [] },
                 },
               ] as GraphqlPullRequest[],
             },
@@ -103,6 +131,7 @@ describe("collectPullRequests", () => {
                   comments: { nodes: [] },
                   commits: { nodes: [] },
                   checkSuites: { nodes: [] },
+                  timelineItems: { nodes: [] },
                 },
                 {
                   id: "4",
@@ -122,6 +151,7 @@ describe("collectPullRequests", () => {
                   comments: { nodes: [] },
                   commits: { nodes: [] },
                   checkSuites: { nodes: [] },
+                  timelineItems: { nodes: [] },
                 },
               ] as GraphqlPullRequest[],
             },
@@ -170,6 +200,7 @@ describe("collectPullRequests", () => {
                   comments: { nodes: [] },
                   commits: { nodes: [] },
                   checkSuites: { nodes: [] },
+                  timelineItems: { nodes: [] },
                 },
               ] as GraphqlPullRequest[],
             },
@@ -186,6 +217,73 @@ describe("collectPullRequests", () => {
       onProgress: (c) => counts.push(c),
     });
     expect(counts).toEqual([1]);
+  });
+
+  it("filters by labels", async () => {
+    nock(baseUrl)
+      .post("/graphql")
+      .reply(200, {
+        data: {
+          repository: {
+            pullRequests: {
+              pageInfo: { hasNextPage: false, endCursor: null },
+              nodes: [
+                {
+                  id: "1",
+                  number: 1,
+                  title: "pr1",
+                  state: "OPEN",
+                  createdAt: "2024-01-01T00:00:00Z",
+                  updatedAt: "2024-01-02T00:00:00Z",
+                  mergedAt: null,
+                  closedAt: null,
+                  additions: 1,
+                  deletions: 1,
+                  changedFiles: 1,
+                  labels: { nodes: [{ name: "team-a" }] },
+                  author: { login: "a" },
+                  reviews: { nodes: [] },
+                  comments: { nodes: [] },
+                  commits: { nodes: [] },
+                  checkSuites: { nodes: [] },
+                  timelineItems: { nodes: [] },
+                },
+                {
+                  id: "2",
+                  number: 2,
+                  title: "pr2",
+                  state: "OPEN",
+                  createdAt: "2024-01-02T00:00:00Z",
+                  updatedAt: "2024-01-03T00:00:00Z",
+                  mergedAt: null,
+                  closedAt: null,
+                  additions: 2,
+                  deletions: 2,
+                  changedFiles: 1,
+                  labels: { nodes: [{ name: "team-b" }] },
+                  author: { login: "b" },
+                  reviews: { nodes: [] },
+                  comments: { nodes: [] },
+                  commits: { nodes: [] },
+                  checkSuites: { nodes: [] },
+                  timelineItems: { nodes: [] },
+                },
+              ] as GraphqlPullRequest[],
+            },
+          },
+        },
+      });
+
+    const prs = await collectPullRequests({
+      owner: "me",
+      repo: "r",
+      since,
+      auth,
+      baseUrl,
+      includeLabels: ["team-a"],
+      excludeLabels: ["team-b"],
+    });
+    expect(prs.map((p) => p.number)).toEqual([1]);
   });
 
   it("returns partial results on error", async () => {
@@ -215,6 +313,7 @@ describe("collectPullRequests", () => {
                   comments: { nodes: [] },
                   commits: { nodes: [] },
                   checkSuites: { nodes: [] },
+                  timelineItems: { nodes: [] },
                 },
               ] as GraphqlPullRequest[],
             },
@@ -225,8 +324,103 @@ describe("collectPullRequests", () => {
       .reply(500, {});
 
     await expect(
-      collectPullRequests({ owner: "me", repo: "r", since, auth, baseUrl })
+      collectPullRequests({ owner: "me", repo: "r", since, auth, baseUrl }),
     ).rejects.toHaveProperty("partial.length", 1);
     scope.done();
+  });
+
+  it("uses cache on second run", async () => {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "cache-"));
+    const origHome = process.env["HOME"];
+    process.env["HOME"] = tmp;
+    const { sqliteStore } = require("../src/cache/sqliteStore");
+    const cache = sqliteStore();
+
+    const scope = nock(baseUrl)
+      .post("/graphql")
+      .reply(200, {
+        data: {
+          repository: {
+            pullRequests: {
+              pageInfo: { hasNextPage: false, endCursor: null },
+              nodes: [] as GraphqlPullRequest[],
+            },
+          },
+        },
+      });
+
+    await collectPullRequests({ owner: "me", repo: "r", since, auth, baseUrl, cache });
+    await collectPullRequests({ owner: "me", repo: "r", since, auth, baseUrl, cache });
+
+    process.env["HOME"] = origHome;
+    fs.rmSync(tmp, { recursive: true, force: true });
+  });
+
+  it("resumes after interruption", async () => {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "cache-"));
+    const origHome = process.env["HOME"];
+    process.env["HOME"] = tmp;
+    const { sqliteStore } = require("../src/cache/sqliteStore");
+    const cache = sqliteStore();
+
+    const makePr = (n: number): GraphqlPullRequest => ({
+      id: String(n),
+      number: n,
+      title: `pr${n}`,
+      state: "OPEN",
+      createdAt: `2024-01-0${n}T00:00:00Z`,
+      updatedAt: `2024-01-0${n}T00:00:00Z`,
+      mergedAt: null,
+      closedAt: null,
+      additions: 1,
+      deletions: 1,
+      changedFiles: 1,
+      labels: { nodes: [] },
+      author: { login: "a" },
+      reviews: { nodes: [] },
+      comments: { nodes: [] },
+      commits: { nodes: [] },
+      checkSuites: { nodes: [] },
+      timelineItems: { nodes: [] },
+    });
+
+    cache.set("cursor:me/r", { cursor: "c5", updatedAt: "2024-01-05T00:00:00Z" });
+    nock(baseUrl)
+      .post("/graphql", (body: any) => body.variables.cursor === "c5")
+      .reply(200, {
+        data: {
+          repository: {
+            pullRequests: {
+              pageInfo: { hasNextPage: true, endCursor: "c6" },
+              nodes: [makePr(6)] as GraphqlPullRequest[],
+            },
+          },
+        },
+      })
+      .post("/graphql")
+      .reply(200, {
+        data: {
+          repository: {
+            pullRequests: {
+              pageInfo: { hasNextPage: false, endCursor: null },
+              nodes: [makePr(7)] as GraphqlPullRequest[],
+            },
+          },
+        },
+      });
+    const prs = await collectPullRequests({
+      owner: "me",
+      repo: "r",
+      since,
+      auth,
+      baseUrl,
+      cache,
+      resume: true,
+    });
+
+    expect(prs.map((p) => p.number)).toEqual([6, 7]);
+
+    process.env["HOME"] = origHome;
+    fs.rmSync(tmp, { recursive: true, force: true });
   });
 });

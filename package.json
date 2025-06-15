@@ -37,6 +37,7 @@
     "docusaurus": "^1.14.7",
     "eslint": "^8.57.1",
     "jest": "^30.0.0",
+    "jest-fetch-mock": "^3.0.3",
     "nock": "^14.0.5",
     "prettier": "^3.5.3",
     "semantic-release": "^24.2.5",

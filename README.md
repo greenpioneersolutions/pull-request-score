@@ -138,3 +138,94 @@ pnpm test
 
 Contributions are welcome! The project is intentionally small and easy to extend
 for additional metrics.
+
+See [docs/metric-reference.md](docs/metric-reference.md) for definitions of all
+available metrics.
+
+### `scoreMetrics`
+
+After calculating metrics you can derive a single numeric score by
+combining them with custom weights.
+
+```ts
+import { scoreMetrics } from '@gh-pr-metrics/core'
+
+const score = scoreMetrics(metrics, [
+  { weight: 0.6, metric: 'mergeRate' },
+  { weight: 0.4, metric: 'reviewCoverage' },
+])
+```
+
+Rules may also use custom functions to leverage any metric data:
+
+```ts
+const score = scoreMetrics(metrics, [
+  { weight: 1, metric: 'mergeRate' },
+  { weight: -0.1, fn: m => m.prBacklog },
+])
+```
+
+Metrics can be normalized before weighting using the `normalize` option. This
+is useful for converting ratios into a 1–100 scale:
+
+```ts
+const score = scoreMetrics(metrics, [
+  { weight: 0.5, metric: 'mergeRate', normalize: v => v * 100 },
+  { weight: 0.5, metric: 'reviewCoverage', normalize: v => v * 100 },
+])
+```
+
+More advanced transforms can convert ranges of values to discrete scores. The
+`createRangeNormalizer` helper makes this easy:
+
+```ts
+import { scoreMetrics, createRangeNormalizer } from '@gh-pr-metrics/core'
+
+const normalizePickupTime = createRangeNormalizer(
+  [
+    { max: 4, score: 100 },
+    { max: 6, score: 80 },
+    { max: 12, score: 60 },
+  ],
+  40,
+)
+
+const score = scoreMetrics({ pickupTime: 5 }, [
+  { weight: 1, metric: 'pickupTime', normalize: normalizePickupTime },
+])
+```
+
+You can reuse the normalizer alongside others for a combined score:
+
+```ts
+const metrics = { pickupTime: 2, mergeRate: 0.95 }
+
+const normalizePickupTime = createRangeNormalizer(
+  [
+    { max: 4, score: 100 },
+    { max: 6, score: 80 },
+    { max: 12, score: 60 },
+  ],
+  40,
+)
+
+const pct = (v: number) => Math.round(v * 100)
+
+const score = scoreMetrics(metrics, [
+  { weight: 0.5, metric: 'pickupTime', normalize: normalizePickupTime },
+  { weight: 0.5, metric: 'mergeRate', normalize: pct },
+])
+// => 98
+```
+
+Multiple rules can even target the same metric, for example to
+compare rounding strategies:
+
+```ts
+scoreMetrics({ mergeRate: 0.955 }, [
+  { weight: 0.5, metric: 'mergeRate', normalize: v => Math.floor(v * 100) },
+  { weight: 0.5, metric: 'mergeRate', normalize: v => Math.ceil(v * 100) },
+])
+// => 95.5
+```
+

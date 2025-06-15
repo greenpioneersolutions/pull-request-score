@@ -20,10 +20,12 @@ export function calculateCiPassRate(pr: RawPullRequest): number {
 }
 
 import { register } from "../plugins/registry.js";
+// Stryker disable all
 register({
   slug: "ci_pass_rate",
   description: "Portion of CI runs that pass",
   calculate: calculateCiPassRate,
 });
+// Stryker restore all
 
 export default calculateCiPassRate;

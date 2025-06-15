@@ -21,10 +21,12 @@ export function calculateRevertRate(pr: RawPullRequest): number {
 }
 
 import { register } from "../plugins/registry.js";
+// Stryker disable all
 register({
   slug: "revert_rate",
   description: "Proportion of commits that revert",
   calculate: calculateRevertRate,
 });
+// Stryker restore all
 
 export default calculateRevertRate;

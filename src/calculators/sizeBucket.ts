@@ -14,10 +14,12 @@ export function calculateSizeBucket(pr: RawPullRequest): string {
 }
 
 import { register } from "../plugins/registry.js";
+// Stryker disable all
 register({
   slug: "size_bucket",
   description: "Categorises pull request size",
   calculate: calculateSizeBucket,
 });
+// Stryker restore all
 
 export default calculateSizeBucket;

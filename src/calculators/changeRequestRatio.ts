@@ -20,4 +20,11 @@ export function calculateChangeRequestRatio(pr: RawPullRequest): number {
   return requested / total;
 }
 
+import { register } from "../plugins/registry.js";
+register({
+  slug: "change_request_ratio",
+  description: "Ratio of reviews requesting changes",
+  calculate: calculateChangeRequestRatio,
+});
+
 export default calculateChangeRequestRatio;

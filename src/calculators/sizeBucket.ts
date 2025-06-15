@@ -13,4 +13,11 @@ export function calculateSizeBucket(pr: RawPullRequest): string {
   return "L";
 }
 
+import { register } from "../plugins/registry.js";
+register({
+  slug: "size_bucket",
+  description: "Categorises pull request size",
+  calculate: calculateSizeBucket,
+});
+
 export default calculateSizeBucket;

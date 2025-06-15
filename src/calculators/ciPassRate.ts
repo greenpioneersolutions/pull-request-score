@@ -19,4 +19,11 @@ export function calculateCiPassRate(pr: RawPullRequest): number {
   return total ? passed / total : 0;
 }
 
+import { register } from "../plugins/registry.js";
+register({
+  slug: "ci_pass_rate",
+  description: "Portion of CI runs that pass",
+  calculate: calculateCiPassRate,
+});
+
 export default calculateCiPassRate;

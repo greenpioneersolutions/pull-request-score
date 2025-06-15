@@ -20,4 +20,11 @@ export function calculateReviewerCount(pr: RawPullRequest): number {
   return reviewers.size;
 }
 
+import { register } from "../plugins/registry.js";
+register({
+  slug: "reviewer_count",
+  description: "Number of unique reviewers",
+  calculate: calculateReviewerCount,
+});
+
 export default calculateReviewerCount;

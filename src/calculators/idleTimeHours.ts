@@ -45,4 +45,11 @@ export function calculateIdleTimeHours(pr: RawPullRequest): number {
   return Math.round(hours * 10) / 10;
 }
 
+import { register } from "../plugins/registry.js";
+register({
+  slug: "idle_time_hours",
+  description: "Time spent idle beyond one day",
+  calculate: calculateIdleTimeHours,
+});
+
 export default calculateIdleTimeHours;

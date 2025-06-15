@@ -1,4 +1,4 @@
-import { makeGraphQLClient } from "../api/githubGraphql.js";
+import { makeGraphQLClient, graphqlWithRetry } from "../api/githubGraphql.js";
 import type {
   PullRequest,
   Author,
@@ -65,6 +65,9 @@ function mapPR(pr: GraphqlPullRequest): RawPullRequest {
       oid: c.commit.oid,
       messageHeadline: c.commit.messageHeadline,
       committedDate: c.commit.committedDate,
+      checkSuites: c.commit.checkSuites.nodes.map((cs) => ({
+        conclusion: cs.conclusion,
+      })),
     })),
     checkSuites: pr.checkSuites.nodes.map((c) => ({
       id: c.id,
@@ -72,6 +75,10 @@ function mapPR(pr: GraphqlPullRequest): RawPullRequest {
       conclusion: c.conclusion,
       startedAt: c.startedAt,
       completedAt: c.completedAt,
+    })),
+    timelineItems: pr.timelineItems.nodes.map((t) => ({
+      type: t.__typename,
+      createdAt: t.createdAt,
     })),
     additions: pr.additions,
     deletions: pr.deletions,
@@ -91,12 +98,29 @@ export async function collectPullRequests(
   const prs: RawPullRequest[] = [];
   let cursor: string | null = null;
   let hasNextPage = true;
-  const query = `query($owner:String!,$repo:String!,$cursor:String){repository(owner:$owner,name:$repo){pullRequests(first:100,after:$cursor,orderBy:{field:UPDATED_AT,direction:DESC}){pageInfo{hasNextPage,endCursor}nodes{id number title state createdAt updatedAt mergedAt closedAt additions deletions changedFiles labels(first:20){nodes{name}} author{login}reviews(first:100){nodes{id state submittedAt author{login}}}comments(first:100){nodes{id body createdAt author{login}}}commits(last:100){nodes{commit{oid committedDate messageHeadline}}}checkSuites(first:100){nodes{id status conclusion startedAt completedAt}}}}}}`;
+  const query = `query($owner:String!,$repo:String!,$cursor:String){
+    repository(owner:$owner,name:$repo){
+      pullRequests(first:100,after:$cursor,orderBy:{field:UPDATED_AT,direction:DESC}){
+        pageInfo{hasNextPage,endCursor}
+        nodes{
+          id number title state createdAt updatedAt mergedAt closedAt
+          additions deletions changedFiles
+          labels(first:20){nodes{name}}
+          author{login}
+          reviews(first:100){nodes{id state submittedAt author{login}}}
+          comments(first:100){nodes{id body createdAt author{login}}}
+          commits(last:100){nodes{commit{oid committedDate messageHeadline checkSuites(first:100){nodes{conclusion}}}}}
+          checkSuites(first:100){nodes{id status conclusion startedAt completedAt}}
+          timelineItems(first:100,itemTypes:[READY_FOR_REVIEW,REVIEW_REQUESTED]){nodes{__typename ... on ReadyForReviewEvent{createdAt} ... on ReviewRequestedEvent{createdAt}}}
+        }
+      }
+    }
+  }`;
 
   let retries = 0;
   while (hasNextPage) {
     try {
-      const data = (await client(query, {
+      const data = (await graphqlWithRetry<PullRequestsQuery>(client, query, {
         owner: params.owner,
         repo: params.repo,
         cursor,

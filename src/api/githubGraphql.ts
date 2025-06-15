@@ -66,3 +66,25 @@ export const makeGraphQLClient = (
 
   return scheduledGraphql;
 };
+
+export async function graphqlWithRetry<T>(
+  client: typeof baseGraphql,
+  query: any,
+  variables?: any,
+  maxAttempts = 5,
+): Promise<T> {
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    try {
+      return (await client(query, variables)) as T;
+    } catch (err: any) {
+      const code =
+        err.errors?.[0]?.type ?? err.errors?.[0]?.extensions?.code;
+      if (code === "RATE_LIMITED" && attempt < maxAttempts - 1) {
+        await new Promise((r) => setTimeout(r, 2 ** attempt * 1000));
+        continue;
+      }
+      throw err;
+    }
+  }
+  throw new Error("unreachable");
+}

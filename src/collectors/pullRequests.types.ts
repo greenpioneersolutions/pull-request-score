@@ -21,7 +21,17 @@ export interface GraphqlCommit {
     oid: string;
     messageHeadline: string;
     committedDate: string;
+    checkSuites: { nodes: GraphqlCommitCheckSuite[] };
   };
+}
+
+export interface GraphqlCommitCheckSuite {
+  conclusion: string | null;
+}
+
+export interface GraphqlTimelineItem {
+  __typename: string;
+  createdAt: string;
 }
 
 export interface GraphqlCheckSuite {
@@ -50,6 +60,7 @@ export interface GraphqlPullRequest {
   comments: { nodes: GraphqlComment[] };
   commits: { nodes: GraphqlCommit[] };
   checkSuites: { nodes: GraphqlCheckSuite[] };
+  timelineItems: { nodes: GraphqlTimelineItem[] };
 }
 
 export interface PullRequestConnection {

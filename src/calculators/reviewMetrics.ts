@@ -26,4 +26,11 @@ export function calculateReviewMetrics(pr: RawPullRequest): number {
   return Math.round(hours * 10) / 10;
 }
 
+import { register } from "../plugins/registry.js";
+register({
+  slug: "pickup_time",
+  description: "Hours until first review",
+  calculate: calculateReviewMetrics,
+});
+
 export default calculateReviewMetrics;

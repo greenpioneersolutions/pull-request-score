@@ -20,4 +20,11 @@ export function calculateRevertRate(pr: RawPullRequest): number {
   return reverts / total;
 }
 
+import { register } from "../plugins/registry.js";
+register({
+  slug: "revert_rate",
+  description: "Proportion of commits that revert",
+  calculate: calculateRevertRate,
+});
+
 export default calculateRevertRate;

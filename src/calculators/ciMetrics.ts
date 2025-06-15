@@ -34,4 +34,11 @@ export function calculateCiMetrics(pr: RawPullRequest): CiMetrics {
   };
 }
 
+import { register } from "../plugins/registry.js";
+register({
+  slug: "ci_metrics",
+  description: "Success rate and duration of CI runs",
+  calculate: calculateCiMetrics,
+});
+
 export default calculateCiMetrics;

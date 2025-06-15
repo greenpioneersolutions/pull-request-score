@@ -15,4 +15,11 @@ export function calculateCommentDensity(pr: RawPullRequest): number {
   return pr.comments.length / linesChanged;
 }
 
+import { register } from "../plugins/registry.js";
+register({
+  slug: "comment_density",
+  description: "Comments per line changed",
+  calculate: calculateCommentDensity,
+});
+
 export default calculateCommentDensity;

@@ -44,6 +44,8 @@
     "@octokit/core": "^7.0.2",
     "@octokit/graphql": "^9.0.1",
     "@octokit/plugin-throttling": "^11.0.1",
+    "@octokit/auth-app": "^8.0.1",
+    "@octokit/request": "^10.0.2",
     "better-sqlite3": "^11.10.0",
     "commander": "^11.0.0",
     "ms": "^2.1.3"

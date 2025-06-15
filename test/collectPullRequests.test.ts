@@ -350,8 +350,6 @@ describe("collectPullRequests", () => {
       });
 
     await collectPullRequests({ owner: "me", repo: "r", since, auth, baseUrl, cache });
-    scope.done();
-
     await collectPullRequests({ owner: "me", repo: "r", since, auth, baseUrl, cache });
 
     process.env["HOME"] = origHome;

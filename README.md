@@ -133,6 +133,7 @@ writeOutput(metrics, { format: "json" });
 See [docs/rate-limiter.md](docs/rate-limiter.md) for details on pacing API
 requests and [docs/write-output.md](docs/write-output.md) for controlling output
 formats.
+For custom metrics see the [Plugin API docs](https://owner.github.io/pull-request-score/plugin-api).
 
 ## Development
 

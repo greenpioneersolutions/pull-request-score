@@ -47,13 +47,21 @@ describe("calculateMetrics", () => {
     const big = { ...base, number: 4, additions: 60, deletions: 60 };
     const m = calculateMetrics([big], { outsizedThreshold: 100 });
     expect(m.outsizedPrs).toEqual([4]);
+    expect(m.outsizedPrRatio).toBeCloseTo(1);
   });
 
   it("computes review coverage", () => {
     const reviewed = {
       ...base,
       number: 5,
-      reviews: [{ id: "r1", state: "APPROVED", submittedAt: base.createdAt, author: { login: "b" } }],
+      reviews: [
+        {
+          id: "r1",
+          state: "APPROVED",
+          submittedAt: base.createdAt,
+          author: { login: "b" },
+        },
+      ],
     };
     const m = calculateMetrics([base, reviewed]);
     expect(m.reviewCoverage).toBeCloseTo(0.5);
@@ -65,8 +73,20 @@ describe("calculateMetrics", () => {
       ...base,
       number: 6,
       checkSuites: [
-        { id: "1", status: "COMPLETED", conclusion: "SUCCESS", startedAt: base.createdAt, completedAt: base.createdAt },
-        { id: "2", status: "COMPLETED", conclusion: "FAILURE", startedAt: base.createdAt, completedAt: base.createdAt },
+        {
+          id: "1",
+          status: "COMPLETED",
+          conclusion: "SUCCESS",
+          startedAt: base.createdAt,
+          completedAt: base.createdAt,
+        },
+        {
+          id: "2",
+          status: "COMPLETED",
+          conclusion: "FAILURE",
+          startedAt: base.createdAt,
+          completedAt: base.createdAt,
+        },
       ],
     };
     const m = calculateMetrics([pr]);
@@ -74,7 +94,12 @@ describe("calculateMetrics", () => {
   });
 
   it("counts PR backlog", () => {
-    const closed = { ...base, number: 7, state: "CLOSED", closedAt: "2024-01-02T00:00:00Z" };
+    const closed = {
+      ...base,
+      number: 7,
+      state: "CLOSED",
+      closedAt: "2024-01-02T00:00:00Z",
+    };
     const m = calculateMetrics([base, closed]);
     expect(m.prBacklog).toBe(1);
   });
@@ -83,6 +108,7 @@ describe("calculateMetrics", () => {
     const m = calculateMetrics([]);
     expect(m.mergeRate).toBe(0);
     expect(m.outsizedPrs.length).toBe(0);
+    expect(m.outsizedPrRatio).toBe(0);
     expect(m.prBacklog).toBe(0);
   });
 

@@ -18,6 +18,11 @@ on interpreting the numbers. It works against the public GitHub API and GitHub
 Enterprise installations and is designed to scale to large organizations with
 many concurrent pull requests.
 
+## Requirements
+
+- **Node.js** 18 or newer
+- **pnpm** package manager
+
 ## Features
 
  - **Comprehensive metrics** – see the [Metric Reference](https://owner.github.io/pull-request-score/docs/metric-reference) for the full list.

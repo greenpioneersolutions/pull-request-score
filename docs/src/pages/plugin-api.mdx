@@ -1,0 +1,22 @@
+---
+title: Plugin API
+---
+
+## Writing a custom metric plugin
+
+You can extend the metrics library by registering your own plugins. Each plugin implements the `MetricPlugin` interface and is loaded via `register`.
+
+```ts
+import type { MetricPlugin } from '@gh-pr-metrics/core'
+import { register } from '@gh-pr-metrics/core'
+
+const filesChanged: MetricPlugin = {
+  slug: 'files_changed',
+  description: 'Number of files changed in a PR',
+  calculate(pr) {
+    return pr.changedFiles
+  },
+}
+
+register(filesChanged)
+```

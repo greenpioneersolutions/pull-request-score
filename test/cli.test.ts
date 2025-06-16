@@ -36,6 +36,15 @@ jest.mock("../src/collectors/pullRequests", () => ({
   },
 }));
 
+jest.mock("../src/logger.js", () => ({
+  __esModule: true,
+  default: {
+    info: jest.fn(),
+    error: jest.fn(),
+    level: 'info',
+  },
+}));
+
 jest.mock("../src/calculators/cycleTime", () => ({
   calculateCycleTime: jest.fn(() => 10),
 }));
@@ -49,19 +58,18 @@ jest.mock("../src/cache/sqliteStore", () => ({
 import fs from "fs";
 import os from "os";
 import path from "path";
+import logger from "../src/logger.js";
 
 describe("cli", () => {
   const origArgv = process.argv;
-  const log = jest.spyOn(console, "log").mockImplementation(() => {});
-  const error = jest.spyOn(console, "error").mockImplementation(() => {});
   const stdout = jest
     .spyOn(process.stdout, "write")
     .mockImplementation(() => true);
 
   afterEach(() => {
     process.argv = origArgv;
-    log.mockClear();
-    error.mockClear();
+    (logger.info as jest.Mock).mockClear();
+    (logger.error as jest.Mock).mockClear();
     stdout.mockClear();
     jest.resetModules();
     jest.clearAllMocks();
@@ -69,6 +77,7 @@ describe("cli", () => {
 
   it("prints JSON metrics", async () => {
     const { runCli } = require("../src/cli");
+    const logger = require("../src/logger.js").default;
     process.argv = ["node", "cli", "foo/bar", "--token", "t"];
     await runCli();
     expect(stdout).toHaveBeenCalledTimes(1);
@@ -80,9 +89,10 @@ describe("cli", () => {
 
   it("supports dry run", async () => {
     const { runCli } = require("../src/cli");
+    const logger = require("../src/logger.js").default;
     process.argv = ["node", "cli", "foo/bar", "--token", "t", "--dry-run"];
     await runCli();
-    expect(log).toHaveBeenCalledWith(
+    expect(logger.info).toHaveBeenCalledWith(
       expect.stringContaining("Would fetch metrics"),
     );
     expect(
@@ -92,6 +102,7 @@ describe("cli", () => {
 
   it("prints progress information", async () => {
     const { runCli } = require("../src/cli");
+    const logger = require("../src/logger.js").default;
     const mod = require("../src/collectors/pullRequests");
     mod.collectPullRequests.mockImplementation(async (opts: any) => {
       opts.onProgress(1);
@@ -109,6 +120,7 @@ describe("cli", () => {
 
   it("writes metrics to stderr", async () => {
     const { runCli } = require("../src/cli");
+    const logger = require("../src/logger.js").default;
     const errSpy = jest
       .spyOn(process.stderr, "write")
       .mockImplementation(() => true);
@@ -128,6 +140,7 @@ describe("cli", () => {
 
   it("passes label filters", async () => {
     const { runCli } = require("../src/cli");
+    const logger = require("../src/logger.js").default;
     const mod = require("../src/collectors/pullRequests");
     process.argv = [
       "node",
@@ -151,6 +164,7 @@ describe("cli", () => {
 
   it("uses cache when enabled", async () => {
     const { runCli } = require("../src/cli");
+    const logger = require("../src/logger.js").default;
     const mod = require("../src/collectors/pullRequests");
     const cacheMod = require("../src/cache/sqliteStore");
     process.argv = ["node", "cli", "foo/bar", "--token", "t", "--use-cache"];
@@ -163,6 +177,7 @@ describe("cli", () => {
 
   it("passes --resume to collector", async () => {
     const { runCli } = require("../src/cli");
+    const logger = require("../src/logger.js").default;
     const mod = require("../src/collectors/pullRequests");
     process.argv = ["node", "cli", "foo/bar", "--token", "t", "--resume"];
     await runCli();
@@ -174,6 +189,7 @@ describe("cli", () => {
   it("parses --since values", async () => {
     jest.useFakeTimers().setSystemTime(new Date("2024-05-20T00:00:00Z"));
     const { runCli } = require("../src/cli");
+    const logger = require("../src/logger.js").default;
     const mod = require("../src/collectors/pullRequests");
     process.argv = ["node", "cli", "foo/bar", "--token", "t", "--since", "2d"];
     await runCli();
@@ -187,10 +203,11 @@ describe("cli", () => {
 
   it("errors on invalid --since", async () => {
     const { runCli } = require("../src/cli");
+    const logger = require("../src/logger.js").default;
     const mod = require("../src/collectors/pullRequests");
     process.argv = ["node", "cli", "foo/bar", "--token", "t", "--since", "bad"];
     await runCli();
-    expect(error).toHaveBeenCalledWith(
+    expect(logger.error).toHaveBeenCalledWith(
       expect.stringContaining("Invalid duration"),
     );
     expect(mod.collectPullRequests).not.toHaveBeenCalled();

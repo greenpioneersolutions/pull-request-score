@@ -12,6 +12,7 @@ import { sqliteStore } from "./cache/sqliteStore.js";
 import { calculateCycleTime } from "./calculators/cycleTime.js";
 import { calculateReviewMetrics } from "./calculators/reviewMetrics.js";
 import { writeOutput } from "./output/writers.js";
+import logger from "./logger.js";
 
 interface CliOptions {
   since: string;
@@ -27,6 +28,7 @@ interface CliOptions {
   resume?: boolean;
   appId?: string;
   appPrivateKey?: string;
+  logLevel?: string;
 }
 
 function stats(values: number[]): {
@@ -80,26 +82,35 @@ export async function runCli(argv = process.argv): Promise<void> {
       "write metrics to file or stdout/stderr",
       "stdout",
     )
+    .option(
+      "--log-level <level>",
+      "logger level",
+      process.env["LOG_LEVEL"] ?? "info",
+    )
     .allowExcessArguments(false);
 
   program.parse(argv);
   const opts = program.opts<CliOptions>();
+  if (opts.logLevel) {
+    process.env["LOG_LEVEL"] = opts.logLevel;
+    logger.level = opts.logLevel;
+  }
   if (opts.appId) process.env["GH_APP_ID"] = opts.appId;
   if (opts.appPrivateKey)
     process.env["GH_APP_PK"] = fs.readFileSync(opts.appPrivateKey, "utf8");
   const [owner, repo] = (program.args[0] || "").split("/");
   const token = opts.token ?? process.env["GH_TOKEN"];
   if (!owner || !repo) {
-    console.error("Repository must be in <owner>/<repo> format");
+    logger.error("Repository must be in <owner>/<repo> format");
     program.help({ error: true });
   }
   if (!token) {
-    console.error("GitHub token required via --token or GH_TOKEN env");
+    logger.error("GitHub token required via --token or GH_TOKEN env");
     program.help({ error: true });
   }
   const sinceMs = ms(opts.since);
   if (sinceMs === undefined) {
-    console.error(`Invalid duration for --since: ${opts.since}`);
+    logger.error(`Invalid duration for --since: ${opts.since}`);
     process.exitCode = 1;
     return;
   }
@@ -119,7 +130,7 @@ export async function runCli(argv = process.argv): Promise<void> {
     : undefined;
 
   if (opts.dryRun) {
-    console.log(`Would fetch metrics for ${owner}/${repo} since ${opts.since}`);
+    logger.info(`Would fetch metrics for ${owner}/${repo} since ${opts.since}`);
     return;
   }
 
@@ -150,12 +161,12 @@ export async function runCli(argv = process.argv): Promise<void> {
     if (onProgress) process.stderr.write("\n");
   } catch (err: any) {
     if (err instanceof PartialResultsError) {
-      console.error(
+      logger.error(
         `Encountered error after ${err.partial.length} PRs: ${err.message}`,
       );
       prs = err.partial;
     } else {
-      console.error(`Failed to fetch pull requests: ${err.message}`);
+      logger.error(`Failed to fetch pull requests: ${err.message}`);
       process.exitCode = 1;
       return;
     }

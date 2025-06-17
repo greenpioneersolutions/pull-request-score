@@ -19,3 +19,7 @@ jobs:
           message: 'chore(metrics): weekly auto-update'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Send Slack summary
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: node scripts/postToSlack.js --file metrics.json

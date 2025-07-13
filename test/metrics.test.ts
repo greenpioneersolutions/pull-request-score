@@ -117,4 +117,38 @@ describe("calculateMetrics", () => {
     const m = calculateMetrics([pr]);
     expect(m.prCountPerDeveloper["a"]).toBeUndefined();
   });
+
+  it("tracks comment metrics", () => {
+    const comments = Array.from({ length: 10 }, (_, i) => ({
+      id: `c${i}`,
+      body: i % 2 === 0 ? "long comment with several words" : "hi",
+      createdAt: base.createdAt,
+      author: { login: String.fromCharCode(97 + (i % 3)) },
+    }));
+    const discussed = { ...base, number: 9, comments };
+    const m = calculateMetrics([discussed, base], {
+      enableCommentQuality: true,
+    });
+    expect(m.commentCounts[9]).toBe(10);
+    expect(m.commenterCounts[9]).toBe(3);
+    expect(m.discussionCoverage).toBeCloseTo(0.5);
+    expect(m.commentQuality).toBeGreaterThan(0);
+  });
+
+  it("omits comment quality when disabled", () => {
+    const pr = {
+      ...base,
+      number: 10,
+      comments: [
+        {
+          id: "c",
+          body: "test",
+          createdAt: base.createdAt,
+          author: { login: "a" },
+        },
+      ],
+    };
+    const m = calculateMetrics([pr]);
+    expect(m.commentQuality).toBeUndefined();
+  });
 });

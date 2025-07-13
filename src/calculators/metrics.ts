@@ -1,6 +1,8 @@
 export interface MetricsOptions {
   outsizedThreshold?: number;
   staleDays?: number;
+  /** Calculate comment quality metrics */
+  enableCommentQuality?: boolean;
 }
 
 import type { RawPullRequest } from "../collectors/pullRequests.js";
@@ -14,6 +16,11 @@ export interface CalculatedMetrics {
   outsizedPrRatio: number;
   reviewCoverage: number;
   reviewCounts: Record<number, number>;
+  commentCounts: Record<number, number>;
+  commenterCounts: Record<number, number>;
+  discussionCoverage: number;
+  /** Average ratio of long comments per PR when enabled */
+  commentQuality?: number;
   buildSuccessRate: number;
   averageCiDuration: number;
   stalePrCount: number;
@@ -42,6 +49,11 @@ export function calculateMetrics(
   let hotfixCount = 0;
   let prBacklog = 0;
   const reviewCounts: Record<number, number> = {};
+  const commentCounts: Record<number, number> = {};
+  const commenterCounts: Record<number, number> = {};
+  let discussionPrs = 0;
+  let qualitySum = 0;
+  let qualityCount = 0;
 
   for (const pr of prs) {
     if (pr.author?.login) {
@@ -60,6 +72,25 @@ export function calculateMetrics(
     if (pr.reviews.length > 0) {
       reviewedPrs += 1;
       reviewCounts[pr.number] = pr.reviews.length;
+    }
+
+    commentCounts[pr.number] = pr.comments.length;
+    const commenters = new Set<string>();
+    for (const c of pr.comments) {
+      if (c.author?.login) commenters.add(c.author.login);
+    }
+    commenterCounts[pr.number] = commenters.size;
+    if (pr.comments.length >= 10 && commenters.size >= 3) {
+      discussionPrs += 1;
+    }
+    if (opts.enableCommentQuality && pr.comments.length > 0) {
+      let long = 0;
+      for (const c of pr.comments) {
+        const words = c.body.trim().split(/\s+/).filter(Boolean).length;
+        if (words >= 5) long += 1;
+      }
+      qualitySum += long / pr.comments.length;
+      qualityCount += 1;
     }
 
     for (const cs of pr.checkSuites) {
@@ -94,6 +125,13 @@ export function calculateMetrics(
     outsizedPrRatio: prs.length ? outsizedCount / prs.length : 0,
     reviewCoverage: prs.length ? reviewedPrs / prs.length : 0,
     reviewCounts,
+    commentCounts,
+    commenterCounts,
+    discussionCoverage: prs.length ? discussionPrs / prs.length : 0,
+    commentQuality:
+      opts.enableCommentQuality && qualityCount
+        ? qualitySum / qualityCount
+        : undefined,
     buildSuccessRate: checkSuiteCount ? buildSuccess / checkSuiteCount : 0,
     averageCiDuration: checkSuiteCount
       ? totalCiDuration / checkSuiteCount / 1000

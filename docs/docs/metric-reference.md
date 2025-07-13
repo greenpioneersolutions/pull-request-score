@@ -16,3 +16,5 @@
 | `prBacklog` | `number of PRs with state == "OPEN"` | count | How many PRs are currently pending. |
 | `prCountPerDeveloper` | `PRs authored by user / total PRs` | record | Distribution of PR authorship. |
 | `reviewCounts` | `reviews per PR` | record | Number of reviews each PR received. |
+| `commentCounts` | `comments per PR` | record | How many comments were left on each PR. |
+| `commenterCounts` | `unique commenters per PR` | record | Number of distinct people commenting on each PR. |

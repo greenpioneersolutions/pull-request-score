@@ -140,7 +140,11 @@ For custom metrics see the [Plugin API docs](https://owner.github.io/pull-reques
 ```bash
 pnpm install
 pnpm test
+pnpm run mutate # optional mutation testing
 ```
+
+Mutation tests use [Stryker](https://stryker-mutator.io/) and can take several
+minutes to run, so they are excluded from the default `pnpm test` task.
 
 Contributions are welcome! The project is intentionally small and easy to extend
 for additional metrics.

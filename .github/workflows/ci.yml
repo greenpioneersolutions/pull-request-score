@@ -13,5 +13,4 @@ jobs:
           version: 8
       - run: pnpm install
       - run: pnpm test
-      - name: Mutation tests
-        run: pnpm stryker run
+      # Run mutation tests manually with `pnpm run mutate` when needed

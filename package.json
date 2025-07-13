@@ -18,6 +18,7 @@
     "lint": "eslint . --ext .ts",
     "format": "prettier --write .",
     "test": "pnpm exec jest --coverage",
+    "mutate": "pnpm stryker run",
     "release": "semantic-release"
   },
   "engines": {

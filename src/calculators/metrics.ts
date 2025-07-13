@@ -14,6 +14,10 @@ export interface CalculatedMetrics {
   outsizedPrRatio: number;
   reviewCoverage: number;
   reviewCounts: Record<number, number>;
+  /** Number of comments each pull request received */
+  commentCounts: Record<number, number>;
+  /** Distinct commenters per pull request */
+  commenterCounts: Record<number, number>;
   buildSuccessRate: number;
   averageCiDuration: number;
   stalePrCount: number;
@@ -42,6 +46,8 @@ export function calculateMetrics(
   let hotfixCount = 0;
   let prBacklog = 0;
   const reviewCounts: Record<number, number> = {};
+  const commentCounts: Record<number, number> = {};
+  const commenterCounts: Record<number, number> = {};
 
   for (const pr of prs) {
     if (pr.author?.login) {
@@ -61,6 +67,13 @@ export function calculateMetrics(
       reviewedPrs += 1;
       reviewCounts[pr.number] = pr.reviews.length;
     }
+
+    commentCounts[pr.number] = pr.comments.length;
+    const commenters = new Set<string>();
+    for (const c of pr.comments) {
+      if (c.author?.login) commenters.add(c.author.login);
+    }
+    commenterCounts[pr.number] = commenters.size;
 
     for (const cs of pr.checkSuites) {
       checkSuiteCount += 1;
@@ -94,6 +107,8 @@ export function calculateMetrics(
     outsizedPrRatio: prs.length ? outsizedCount / prs.length : 0,
     reviewCoverage: prs.length ? reviewedPrs / prs.length : 0,
     reviewCounts,
+    commentCounts,
+    commenterCounts,
     buildSuccessRate: checkSuiteCount ? buildSuccess / checkSuiteCount : 0,
     averageCiDuration: checkSuiteCount
       ? totalCiDuration / checkSuiteCount / 1000

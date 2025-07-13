@@ -117,4 +117,56 @@ describe("calculateMetrics", () => {
     const m = calculateMetrics([pr]);
     expect(m.prCountPerDeveloper["a"]).toBeUndefined();
   });
+
+  it("counts comments and unique commenters", () => {
+    const pr: RawPullRequest = {
+      ...base,
+      number: 9,
+      comments: [
+        { id: "c1", body: "", createdAt: base.createdAt, author: { login: "x" } },
+        { id: "c2", body: "", createdAt: base.createdAt, author: { login: "y" } },
+        { id: "c3", body: "", createdAt: base.createdAt, author: { login: "x" } },
+      ],
+    };
+    const m = calculateMetrics([pr]);
+    expect(m.commentCounts[9]).toBe(3);
+    expect(m.commenterCounts[9]).toBe(2);
+  });
+
+  it("tracks comments for multiple PRs", () => {
+    const pr1: RawPullRequest = {
+      ...base,
+      number: 10,
+      comments: [{ id: "a", body: "", createdAt: base.createdAt, author: { login: "x" } }],
+    };
+    const pr2: RawPullRequest = {
+      ...base,
+      number: 11,
+      comments: [
+        { id: "b", body: "", createdAt: base.createdAt, author: { login: "y" } },
+        { id: "c", body: "", createdAt: base.createdAt, author: { login: "y" } },
+        { id: "d", body: "", createdAt: base.createdAt, author: { login: "z" } },
+      ],
+    };
+    const m = calculateMetrics([pr1, pr2]);
+    expect(m.commentCounts[10]).toBe(1);
+    expect(m.commenterCounts[10]).toBe(1);
+    expect(m.commentCounts[11]).toBe(3);
+    expect(m.commenterCounts[11]).toBe(2);
+  });
+
+  it("ignores comments without authors for unique counts", () => {
+    const pr: RawPullRequest = {
+      ...base,
+      number: 12,
+      comments: [
+        { id: "na1", body: "", createdAt: base.createdAt, author: null },
+        { id: "na2", body: "", createdAt: base.createdAt, author: { login: "a" } },
+        { id: "na3", body: "", createdAt: base.createdAt, author: null },
+      ],
+    };
+    const m = calculateMetrics([pr]);
+    expect(m.commentCounts[12]).toBe(3);
+    expect(m.commenterCounts[12]).toBe(1);
+  });
 });

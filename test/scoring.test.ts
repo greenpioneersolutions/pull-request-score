@@ -12,6 +12,8 @@ describe("scoreMetrics", () => {
     outsizedPrRatio: 0,
     reviewCoverage: 0.9,
     reviewCounts: {},
+    commentCounts: {},
+    commenterCounts: {},
     buildSuccessRate: 1,
     averageCiDuration: 50,
     stalePrCount: 1,

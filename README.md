@@ -25,7 +25,7 @@ many concurrent pull requests.
 
 ## Features
 
- - **Comprehensive metrics** – see the [Metric Reference](https://owner.github.io/pull-request-score/docs/metric-reference) for the full list.
+- **Comprehensive metrics** – see the [Metric Reference](https://owner.github.io/pull-request-score/docs/metric-reference) for the full list.
 - **Support for GitHub Enterprise** via the `--base-url` option.
 - **CLI and library usage** for flexibility.
 - **Label based filtering** so monorepo users can target a specific team or
@@ -36,12 +36,12 @@ many concurrent pull requests.
 ### Parsing ticket IDs
 
 ```ts
-import { parseTicket, hasTicket } from 'pull-request-score'
+import { parseTicket, hasTicket } from "pull-request-score";
 
-parseTicket('BOSS-1252 fix bug')
+parseTicket("BOSS-1252 fix bug");
 // => { team: 'BOSS', number: 1252 }
 
-hasTicket('no ticket here')
+hasTicket("no ticket here");
 // => false
 ```
 
@@ -159,44 +159,52 @@ import {
   collectPullRequests,
   calculateMetrics,
   scoreMetrics,
-} from 'pull-request-score'
+} from "pull-request-score";
 
 const prs = await collectPullRequests({
-  owner: 'my-org',
-  repo: 'my-repo',
-  baseUrl: 'https://github.mycompany.com/api/v3',
+  owner: "my-org",
+  repo: "my-repo",
+  baseUrl: "https://github.mycompany.com/api/v3",
   auth: process.env.GH_TOKEN,
   since: new Date(Date.now() - 30 * 86_400_000).toISOString(),
-})
+});
 
-const metrics = calculateMetrics(prs, { enableCommentQuality: true })
-const pct = (v: number) => v * 100
+const metrics = calculateMetrics(prs, { enableCommentQuality: true });
+const pct = (v: number) => v * 100;
 const sum = (obj: Record<string, number>) =>
-  Object.values(obj).reduce((a, b) => a + b, 0)
+  Object.values(obj).reduce((a, b) => a + b, 0);
 
 const enterpriseScore = scoreMetrics(metrics, [
-  { metric: 'cycleTime', weight: -0.05 },
-  { metric: 'pickupTime', weight: -0.05 },
-  { metric: 'mergeRate', weight: 0.05, normalize: pct },
-  { metric: 'closedWithoutMergeRate', weight: -0.05, normalize: pct },
-  { metric: 'reviewCoverage', weight: 0.05, normalize: pct },
-  { metric: 'averageCommitsPerPr', weight: -0.05 },
-  { metric: 'outsizedPrs', weight: -0.05, fn: m => m.outsizedPrs.length },
-  { metric: 'buildSuccessRate', weight: 0.05, normalize: pct },
-  { metric: 'averageCiDuration', weight: -0.05 },
-  { metric: 'stalePrCount', weight: -0.05 },
-  { metric: 'hotfixFrequency', weight: -0.05, normalize: pct },
-  { metric: 'prBacklog', weight: -0.05 },
-  { metric: 'prCountPerDeveloper', weight: 0.05, fn: m => Object.keys(m.prCountPerDeveloper).length },
-  { metric: 'reviewCounts', weight: 0.05, fn: m => sum(m.reviewCounts) },
-  { metric: 'commentCounts', weight: 0.05, fn: m => sum(m.commentCounts) },
-  { metric: 'commenterCounts', weight: 0.05, fn: m => sum(m.commenterCounts) },
-  { metric: 'discussionCoverage', weight: 0.05, normalize: pct },
-  { metric: 'commentDensity', weight: 0.05, normalize: pct },
-  { metric: 'commentQuality', weight: 0.05, normalize: pct },
-])
+  { metric: "cycleTime", weight: -0.05 },
+  { metric: "pickupTime", weight: -0.05 },
+  { metric: "mergeRate", weight: 0.05, normalize: pct },
+  { metric: "closedWithoutMergeRate", weight: -0.05, normalize: pct },
+  { metric: "reviewCoverage", weight: 0.05, normalize: pct },
+  { metric: "averageCommitsPerPr", weight: -0.05 },
+  { metric: "outsizedPrs", weight: -0.05, fn: (m) => m.outsizedPrs.length },
+  { metric: "buildSuccessRate", weight: 0.05, normalize: pct },
+  { metric: "averageCiDuration", weight: -0.05 },
+  { metric: "stalePrCount", weight: -0.05 },
+  { metric: "hotfixFrequency", weight: -0.05, normalize: pct },
+  { metric: "prBacklog", weight: -0.05 },
+  {
+    metric: "prCountPerDeveloper",
+    weight: 0.05,
+    fn: (m) => Object.keys(m.prCountPerDeveloper).length,
+  },
+  { metric: "reviewCounts", weight: 0.05, fn: (m) => sum(m.reviewCounts) },
+  { metric: "commentCounts", weight: 0.05, fn: (m) => sum(m.commentCounts) },
+  {
+    metric: "commenterCounts",
+    weight: 0.05,
+    fn: (m) => sum(m.commenterCounts),
+  },
+  { metric: "discussionCoverage", weight: 0.05, normalize: pct },
+  { metric: "commentDensity", weight: 0.05, normalize: pct },
+  { metric: "commentQuality", weight: 0.05, normalize: pct },
+]);
 
-console.log(`Enterprise score: ${enterpriseScore}`)
+console.log(`Enterprise score: ${enterpriseScore}`);
 ```
 
 ## Development
@@ -218,21 +226,21 @@ After calculating metrics you can derive a single numeric score by
 combining them with custom weights.
 
 ```ts
-import { scoreMetrics } from 'pull-request-score'
+import { scoreMetrics } from "pull-request-score";
 
 const score = scoreMetrics(metrics, [
-  { weight: 0.6, metric: 'mergeRate' },
-  { weight: 0.4, metric: 'reviewCoverage' },
-])
+  { weight: 0.6, metric: "mergeRate" },
+  { weight: 0.4, metric: "reviewCoverage" },
+]);
 ```
 
 Rules may also use custom functions to leverage any metric data:
 
 ```ts
 const score = scoreMetrics(metrics, [
-  { weight: 1, metric: 'mergeRate' },
-  { weight: -0.1, fn: m => m.prBacklog },
-])
+  { weight: 1, metric: "mergeRate" },
+  { weight: -0.1, fn: (m) => m.prBacklog },
+]);
 ```
 
 Metrics can be normalized before weighting using the `normalize` option. This
@@ -240,9 +248,9 @@ is useful for converting ratios into a 1–100 scale:
 
 ```ts
 const score = scoreMetrics(metrics, [
-  { weight: 0.5, metric: 'mergeRate', normalize: v => v * 100 },
-  { weight: 0.5, metric: 'reviewCoverage', normalize: v => v * 100 },
-])
+  { weight: 0.5, metric: "mergeRate", normalize: (v) => v * 100 },
+  { weight: 0.5, metric: "reviewCoverage", normalize: (v) => v * 100 },
+]);
 ```
 
 To include comments in your score, combine `discussionCoverage` and
@@ -251,28 +259,28 @@ To include comments in your score, combine `discussionCoverage` and
 
 ```ts
 const score = scoreMetrics(metrics, [
-  { weight: 0.5, metric: 'discussionCoverage', normalize: v => v * 100 },
-  { weight: 0.5, metric: 'commentQuality', normalize: v => v * 100 },
-])
+  { weight: 0.5, metric: "discussionCoverage", normalize: (v) => v * 100 },
+  { weight: 0.5, metric: "commentQuality", normalize: (v) => v * 100 },
+]);
 ```
 
 To reward raw comment volume across all PRs you can supply a custom rule:
 
 ```ts
 const totalComments = (m: any) =>
-  Object.values(m.commentCounts).reduce((a, b) => a + b, 0)
+  Object.values(m.commentCounts).reduce((a, b) => a + b, 0);
 
 const score = scoreMetrics(metrics, [
   { weight: 0.7, fn: totalComments },
-  { weight: 0.3, metric: 'commentQuality', normalize: v => v * 100 },
-])
+  { weight: 0.3, metric: "commentQuality", normalize: (v) => v * 100 },
+]);
 ```
 
 More advanced transforms can convert ranges of values to discrete scores. The
 `createRangeNormalizer` helper makes this easy:
 
 ```ts
-import { scoreMetrics, createRangeNormalizer } from 'pull-request-score'
+import { scoreMetrics, createRangeNormalizer } from "pull-request-score";
 
 const normalizePickupTime = createRangeNormalizer(
   [
@@ -281,17 +289,17 @@ const normalizePickupTime = createRangeNormalizer(
     { max: 12, score: 60 },
   ],
   40,
-)
+);
 
 const score = scoreMetrics({ pickupTime: 5 }, [
-  { weight: 1, metric: 'pickupTime', normalize: normalizePickupTime },
-])
+  { weight: 1, metric: "pickupTime", normalize: normalizePickupTime },
+]);
 ```
 
 You can reuse the normalizer alongside others for a combined score:
 
 ```ts
-const metrics = { pickupTime: 2, mergeRate: 0.95 }
+const metrics = { pickupTime: 2, mergeRate: 0.95 };
 
 const normalizePickupTime = createRangeNormalizer(
   [
@@ -300,14 +308,14 @@ const normalizePickupTime = createRangeNormalizer(
     { max: 12, score: 60 },
   ],
   40,
-)
+);
 
-const pct = (v: number) => Math.round(v * 100)
+const pct = (v: number) => Math.round(v * 100);
 
 const score = scoreMetrics(metrics, [
-  { weight: 0.5, metric: 'pickupTime', normalize: normalizePickupTime },
-  { weight: 0.5, metric: 'mergeRate', normalize: pct },
-])
+  { weight: 0.5, metric: "pickupTime", normalize: normalizePickupTime },
+  { weight: 0.5, metric: "mergeRate", normalize: pct },
+]);
 // => 98
 ```
 
@@ -316,9 +324,27 @@ compare rounding strategies:
 
 ```ts
 scoreMetrics({ mergeRate: 0.955 }, [
-  { weight: 0.5, metric: 'mergeRate', normalize: v => Math.floor(v * 100) },
-  { weight: 0.5, metric: 'mergeRate', normalize: v => Math.ceil(v * 100) },
-])
+  { weight: 0.5, metric: "mergeRate", normalize: (v) => Math.floor(v * 100) },
+  { weight: 0.5, metric: "mergeRate", normalize: (v) => Math.ceil(v * 100) },
+]);
 // => 95.5
 ```
 
+## Playground
+
+The `playground` directory contains runnable examples for experimenting with the
+library. After cloning this repo, install dependencies and build the project:
+
+```bash
+pnpm install
+pnpm build
+```
+
+Run the examples:
+
+```bash
+node playground/score-metrics.mjs
+GH_TOKEN=YOUR_TOKEN node playground/fetch-metrics.mjs owner/repo
+```
+
+See [playground/README.md](playground/README.md) for more details.

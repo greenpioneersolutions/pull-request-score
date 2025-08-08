@@ -148,6 +148,57 @@ requests and [docs/write-output.md](docs/write-output.md) for controlling output
 formats.
 For custom metrics see the [Plugin API docs](https://owner.github.io/pull-request-score/plugin-api).
 
+## Enterprise Usage
+
+Enterprises can weight every available metric to derive an overall pull request
+health score. The example below connects to a GitHub Enterprise server, enables
+comment quality analysis and combines all metrics into a single number.
+
+```ts
+import {
+  collectPullRequests,
+  calculateMetrics,
+  scoreMetrics,
+} from '@gh-pr-metrics/core'
+
+const prs = await collectPullRequests({
+  owner: 'my-org',
+  repo: 'my-repo',
+  baseUrl: 'https://github.mycompany.com/api/v3',
+  auth: process.env.GH_TOKEN,
+  since: new Date(Date.now() - 30 * 86_400_000).toISOString(),
+})
+
+const metrics = calculateMetrics(prs, { enableCommentQuality: true })
+const pct = (v: number) => v * 100
+const sum = (obj: Record<string, number>) =>
+  Object.values(obj).reduce((a, b) => a + b, 0)
+
+const enterpriseScore = scoreMetrics(metrics, [
+  { metric: 'cycleTime', weight: -0.05 },
+  { metric: 'pickupTime', weight: -0.05 },
+  { metric: 'mergeRate', weight: 0.05, normalize: pct },
+  { metric: 'closedWithoutMergeRate', weight: -0.05, normalize: pct },
+  { metric: 'reviewCoverage', weight: 0.05, normalize: pct },
+  { metric: 'averageCommitsPerPr', weight: -0.05 },
+  { metric: 'outsizedPrs', weight: -0.05, fn: m => m.outsizedPrs.length },
+  { metric: 'buildSuccessRate', weight: 0.05, normalize: pct },
+  { metric: 'averageCiDuration', weight: -0.05 },
+  { metric: 'stalePrCount', weight: -0.05 },
+  { metric: 'hotfixFrequency', weight: -0.05, normalize: pct },
+  { metric: 'prBacklog', weight: -0.05 },
+  { metric: 'prCountPerDeveloper', weight: 0.05, fn: m => Object.keys(m.prCountPerDeveloper).length },
+  { metric: 'reviewCounts', weight: 0.05, fn: m => sum(m.reviewCounts) },
+  { metric: 'commentCounts', weight: 0.05, fn: m => sum(m.commentCounts) },
+  { metric: 'commenterCounts', weight: 0.05, fn: m => sum(m.commenterCounts) },
+  { metric: 'discussionCoverage', weight: 0.05, normalize: pct },
+  { metric: 'commentDensity', weight: 0.05, normalize: pct },
+  { metric: 'commentQuality', weight: 0.05, normalize: pct },
+])
+
+console.log(`Enterprise score: ${enterpriseScore}`)
+```
+
 ## Development
 
 ```bash

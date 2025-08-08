@@ -38,6 +38,8 @@ export interface CollectPullRequestsParams {
   since: string;
   auth: string;
   baseUrl?: string;
+  /** Allow connections to servers with self-signed certificates */
+  rejectUnauthorized?: boolean;
   onProgress?: (count: number) => void;
   includeLabels?: string[];
   excludeLabels?: string[];
@@ -108,6 +110,7 @@ export async function collectPullRequests(
       baseUrl: params.baseUrl,
     }),
     baseUrl: params.baseUrl,
+    rejectUnauthorized: params.rejectUnauthorized,
   });
   const since = new Date(params.since);
   const prs: RawPullRequest[] = [];

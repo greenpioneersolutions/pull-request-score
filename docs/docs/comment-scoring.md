@@ -3,7 +3,7 @@
 Pull request metrics include discussion activity. You can reward teams for rich conversations by combining `discussionCoverage` and `commentQuality` in your scoring rules.
 
 ```ts
-import { scoreMetrics } from '@gh-pr-metrics/core'
+import { scoreMetrics } from 'pull-request-score'
 
 const score = scoreMetrics(metrics, [
   { weight: 0.5, metric: 'discussionCoverage', normalize: v => v * 100 },
@@ -14,7 +14,7 @@ const score = scoreMetrics(metrics, [
 Enable comment quality measurement when computing metrics:
 
 ```ts
-import { calculateMetrics } from '@gh-pr-metrics/core'
+import { calculateMetrics } from 'pull-request-score'
 
 const metrics = await calculateMetrics(prs, { enableCommentQuality: true })
 ```

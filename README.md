@@ -1,11 +1,11 @@
-# @gh-pr-metrics/core
+# pull-request-score
 
-[![npm version](https://img.shields.io/npm/v/@gh-pr-metrics/core)](https://www.npmjs.com/package/@gh-pr-metrics/core)
+[![npm version](https://img.shields.io/npm/v/pull-request-score)](https://www.npmjs.com/package/pull-request-score)
 [![CI](https://github.com/owner/repo/actions/workflows/ci.yml/badge.svg)](https://github.com/owner/repo/actions/workflows/ci.yml)
 [![coverage](https://img.shields.io/codecov/c/github/owner/repo)](https://codecov.io/gh/owner/repo)
 [![docs](https://img.shields.io/badge/docs-website-blue)](https://owner.github.io/pull-request-score/)
 
-`@gh-pr-metrics/core` collects and aggregates pull request data from GitHub. It was
+`pull-request-score` collects and aggregates pull request data from GitHub. It was
 built to help teams understand how code moves through their repositories and to
 highlight opportunities for process improvements. The project exposes both a CLI
 for quick analysis as well as a library for building custom workflows.
@@ -36,7 +36,7 @@ many concurrent pull requests.
 ### Parsing ticket IDs
 
 ```ts
-import { parseTicket, hasTicket } from '@gh-pr-metrics/core'
+import { parseTicket, hasTicket } from 'pull-request-score'
 
 parseTicket('BOSS-1252 fix bug')
 // => { team: 'BOSS', number: 1252 }
@@ -53,7 +53,7 @@ Browse the website for usage guides and API details at
 ## Installation
 
 ```bash
-pnpm add @gh-pr-metrics/core
+pnpm add pull-request-score
 ```
 
 When you only need a quick report you can use `npx`:
@@ -122,7 +122,7 @@ import {
   calculateReviewMetrics,
   calculateCiMetrics,
   writeOutput,
-} from "@gh-pr-metrics/core";
+} from "pull-request-score";
 
 const prs = await collectPullRequests({
   owner: "octocat",
@@ -159,7 +159,7 @@ import {
   collectPullRequests,
   calculateMetrics,
   scoreMetrics,
-} from '@gh-pr-metrics/core'
+} from 'pull-request-score'
 
 const prs = await collectPullRequests({
   owner: 'my-org',
@@ -218,7 +218,7 @@ After calculating metrics you can derive a single numeric score by
 combining them with custom weights.
 
 ```ts
-import { scoreMetrics } from '@gh-pr-metrics/core'
+import { scoreMetrics } from 'pull-request-score'
 
 const score = scoreMetrics(metrics, [
   { weight: 0.6, metric: 'mergeRate' },
@@ -272,7 +272,7 @@ More advanced transforms can convert ranges of values to discrete scores. The
 `createRangeNormalizer` helper makes this easy:
 
 ```ts
-import { scoreMetrics, createRangeNormalizer } from '@gh-pr-metrics/core'
+import { scoreMetrics, createRangeNormalizer } from 'pull-request-score'
 
 const normalizePickupTime = createRangeNormalizer(
   [

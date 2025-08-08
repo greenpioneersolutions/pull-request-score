@@ -1,6 +1,6 @@
 {
-  "name": "@gh-pr-metrics/core",
-  "version": "0.1.0",
+  "name": "@pull-request-score/core",
+  "version": "1.0.0",
   "description": "",
   "type": "module",
   "main": "./dist/index.js",

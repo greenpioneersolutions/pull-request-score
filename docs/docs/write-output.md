@@ -15,7 +15,7 @@ writeOutput(metrics, options?)
 Example:
 
 ```ts
-import { writeOutput } from '@gh-pr-metrics/core';
+import { writeOutput } from 'pull-request-score';
 
 writeOutput(metrics, { format: 'csv', destination: 'metrics.csv' });
 writeOutput(metrics, { destination: 'stderr' });

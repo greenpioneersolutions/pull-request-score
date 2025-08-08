@@ -26,6 +26,9 @@ importers:
       better-sqlite3:
         specifier: ^11.10.0
         version: 11.10.0
+      bottleneck:
+        specifier: ^2.19.5
+        version: 2.19.5
       commander:
         specifier: ^11.1.0
         version: 11.1.0

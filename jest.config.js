@@ -56,6 +56,7 @@ export default {
     "^\\./auth/getAuthStrategy.js$": "<rootDir>/src/auth/getAuthStrategy.ts",
     "^\./logger.js$": "<rootDir>/src/logger.ts",
     "^\.\.\/src/logger.js$": "<rootDir>/src/logger.ts",
+    "^\.\.\/utils/parseTicket.js$": "<rootDir>/src/utils/parseTicket.ts",
     "^\\.\\./src/auth/getAuthStrategy.js$":
       "<rootDir>/src/auth/getAuthStrategy.ts",
     "^\\.\\./auth/getAuthStrategy.js$": "<rootDir>/src/auth/getAuthStrategy.ts",

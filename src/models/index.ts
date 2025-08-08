@@ -44,6 +44,15 @@ export interface TimelineItem {
 }
 
 /**
+ * Parsed ticket identifier from the pull request title.
+ * For example `BOSS-1252` becomes `{ team: "BOSS", number: 1252 }`.
+ */
+export interface TicketRef {
+  team: string;
+  number: number;
+}
+
+/**
  * Result of a CI check suite on the pull request.
  */
 export interface CheckSuite {
@@ -72,6 +81,8 @@ export interface PullRequest {
   commits: Commit[];
   checkSuites: CheckSuite[];
   timelineItems: TimelineItem[];
+  /** Ticket reference parsed from the title when available */
+  ticket?: TicketRef;
   /** Lines added in the pull request */
   additions: number;
   /** Lines removed in the pull request */

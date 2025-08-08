@@ -30,7 +30,20 @@ many concurrent pull requests.
 - **CLI and library usage** for flexibility.
 - **Label based filtering** so monorepo users can target a specific team or
   category of work.
+- **Ticket ID extraction** from PR titles like `BOSS-1252` to capture team and ticket number.
 - Optional throttling helper for environments with strict API limits.
+
+### Parsing ticket IDs
+
+```ts
+import { parseTicket, hasTicket } from '@gh-pr-metrics/core'
+
+parseTicket('BOSS-1252 fix bug')
+// => { team: 'BOSS', number: 1252 }
+
+hasTicket('no ticket here')
+// => false
+```
 
 ## Documentation
 
@@ -178,6 +191,29 @@ is useful for converting ratios into a 1–100 scale:
 const score = scoreMetrics(metrics, [
   { weight: 0.5, metric: 'mergeRate', normalize: v => v * 100 },
   { weight: 0.5, metric: 'reviewCoverage', normalize: v => v * 100 },
+])
+```
+
+To include comments in your score, combine `discussionCoverage` and
+`commentQuality` (enable with `enableCommentQuality` in
+`calculateMetrics`):
+
+```ts
+const score = scoreMetrics(metrics, [
+  { weight: 0.5, metric: 'discussionCoverage', normalize: v => v * 100 },
+  { weight: 0.5, metric: 'commentQuality', normalize: v => v * 100 },
+])
+```
+
+To reward raw comment volume across all PRs you can supply a custom rule:
+
+```ts
+const totalComments = (m: any) =>
+  Object.values(m.commentCounts).reduce((a, b) => a + b, 0)
+
+const score = scoreMetrics(metrics, [
+  { weight: 0.7, fn: totalComments },
+  { weight: 0.3, metric: 'commentQuality', normalize: v => v * 100 },
 ])
 ```
 

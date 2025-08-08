@@ -219,6 +219,51 @@ describe("collectPullRequests", () => {
     expect(counts).toEqual([1]);
   });
 
+  it("extracts ticket info from title", async () => {
+    nock(baseUrl)
+      .post("/graphql")
+      .reply(200, {
+        data: {
+          repository: {
+            pullRequests: {
+              pageInfo: { hasNextPage: false, endCursor: null },
+              nodes: [
+                {
+                  id: "1",
+                  number: 1,
+                  title: "BOSS-1252 fix bug",
+                  state: "OPEN",
+                  createdAt: "2024-01-01T00:00:00Z",
+                  updatedAt: "2024-01-02T00:00:00Z",
+                  mergedAt: null,
+                  closedAt: null,
+                  additions: 1,
+                  deletions: 1,
+                  changedFiles: 1,
+                  labels: { nodes: [] },
+                  author: { login: "a" },
+                  reviews: { nodes: [] },
+                  comments: { nodes: [] },
+                  commits: { nodes: [] },
+                  checkSuites: { nodes: [] },
+                  timelineItems: { nodes: [] },
+                },
+              ] as GraphqlPullRequest[],
+            },
+          },
+        },
+      });
+
+    const prs = await collectPullRequests({
+      owner: "me",
+      repo: "r",
+      since,
+      auth,
+      baseUrl,
+    });
+    expect(prs[0]?.ticket).toEqual({ team: "BOSS", number: 1252 });
+  });
+
   it("filters by labels", async () => {
     nock(baseUrl)
       .post("/graphql")

@@ -21,6 +21,8 @@ const sidebars = {
       items: [
         'rate-limiter',
         'write-output',
+        'ticket-ids',
+        'comment-scoring',
         { type: 'link', label: 'Plugin API', href: '/plugin-api' },
       ],
     },

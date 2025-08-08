@@ -11,6 +11,7 @@ import type {
   Commit,
   CheckSuite,
 } from "../models/index.js";
+import { parseTicket } from "../utils/parseTicket.js";
 import type {
   GraphqlPullRequest,
   PullRequestsQuery,
@@ -89,6 +90,7 @@ function mapPR(pr: GraphqlPullRequest): RawPullRequest {
       type: t.__typename,
       createdAt: t.createdAt,
     })),
+    ticket: parseTicket(pr.title) ?? undefined,
     additions: pr.additions,
     deletions: pr.deletions,
     changedFiles: pr.changedFiles,

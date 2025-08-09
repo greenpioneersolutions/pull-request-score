@@ -34,8 +34,8 @@ export interface GraphqlCheckSuite {
   id: string;
   status: string;
   conclusion: string | null;
-  startedAt: string;
-  completedAt: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface GraphqlPullRequest {

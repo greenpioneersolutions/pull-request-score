@@ -59,8 +59,8 @@ function mapPR(pr: GraphqlPullRequest): RawPullRequest {
       id: cs.id,
       status: cs.status,
       conclusion: cs.conclusion,
-      startedAt: cs.startedAt,
-      completedAt: cs.completedAt,
+      createdAt: cs.createdAt,
+      updatedAt: cs.updatedAt,
     })),
   }));
 
@@ -140,7 +140,7 @@ export async function collectPullRequests(
           author{login}
           reviews(first:100){nodes{id state submittedAt author{login}}}
           comments(first:100){nodes{id body createdAt author{login}}}
-          commits(last:100){nodes{commit{oid committedDate messageHeadline checkSuites(first:100){nodes{id status conclusion startedAt completedAt}}}}}
+          commits(last:100){nodes{commit{oid committedDate messageHeadline checkSuites(first:100){nodes{id status conclusion createdAt updatedAt}}}}}
           timelineItems(first:100,itemTypes:[READY_FOR_REVIEW_EVENT,REVIEW_REQUESTED_EVENT]){nodes{__typename ... on ReadyForReviewEvent{createdAt} ... on ReviewRequestedEvent{createdAt}}}
         }
       }

@@ -55,8 +55,8 @@ export interface CheckSuite {
   id: string;
   status: string;
   conclusion: string | null;
-  startedAt: string;
-  completedAt: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 /**

@@ -27,8 +27,8 @@ describe("calculateCiPassRate", () => {
     const pr = {
       ...base,
       checkSuites: [
-        { id: "1", status: "COMPLETED", conclusion: "SUCCESS", startedAt: base.createdAt, completedAt: base.createdAt },
-        { id: "2", status: "COMPLETED", conclusion: "FAILURE", startedAt: base.createdAt, completedAt: base.createdAt },
+        { id: "1", status: "COMPLETED", conclusion: "SUCCESS", createdAt: base.createdAt, updatedAt: base.createdAt },
+        { id: "2", status: "COMPLETED", conclusion: "FAILURE", createdAt: base.createdAt, updatedAt: base.createdAt },
       ],
     };
     expect(calculateCiPassRate(pr)).toBeCloseTo(0.5);

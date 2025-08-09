@@ -51,6 +51,21 @@ export interface CollectPullRequestsParams {
 }
 
 function mapPR(pr: GraphqlPullRequest): RawPullRequest {
+  const commits = pr.commits.nodes.map((c) => ({
+    oid: c.commit.oid,
+    messageHeadline: c.commit.messageHeadline,
+    committedDate: c.commit.committedDate,
+    checkSuites: c.commit.checkSuites.nodes.map((cs) => ({
+      id: cs.id,
+      status: cs.status,
+      conclusion: cs.conclusion,
+      startedAt: cs.startedAt,
+      completedAt: cs.completedAt,
+    })),
+  }));
+
+  const checkSuites = commits.flatMap((c) => c.checkSuites);
+
   return {
     id: pr.id,
     number: pr.number,
@@ -73,21 +88,8 @@ function mapPR(pr: GraphqlPullRequest): RawPullRequest {
       createdAt: c.createdAt,
       author: c.author ? { login: c.author.login } : null,
     })),
-    commits: pr.commits.nodes.map((c) => ({
-      oid: c.commit.oid,
-      messageHeadline: c.commit.messageHeadline,
-      committedDate: c.commit.committedDate,
-      checkSuites: c.commit.checkSuites.nodes.map((cs) => ({
-        conclusion: cs.conclusion,
-      })),
-    })),
-    checkSuites: pr.checkSuites.nodes.map((c) => ({
-      id: c.id,
-      status: c.status,
-      conclusion: c.conclusion,
-      startedAt: c.startedAt,
-      completedAt: c.completedAt,
-    })),
+    commits,
+    checkSuites,
     timelineItems: pr.timelineItems.nodes.map((t) => ({
       type: t.__typename,
       createdAt: t.createdAt,
@@ -138,9 +140,8 @@ export async function collectPullRequests(
           author{login}
           reviews(first:100){nodes{id state submittedAt author{login}}}
           comments(first:100){nodes{id body createdAt author{login}}}
-          commits(last:100){nodes{commit{oid committedDate messageHeadline checkSuites(first:100){nodes{conclusion}}}}}
-          checkSuites(first:100){nodes{id status conclusion startedAt completedAt}}
-          timelineItems(first:100,itemTypes:[READY_FOR_REVIEW,REVIEW_REQUESTED]){nodes{__typename ... on ReadyForReviewEvent{createdAt} ... on ReviewRequestedEvent{createdAt}}}
+          commits(last:100){nodes{commit{oid committedDate messageHeadline checkSuites(first:100){nodes{id status conclusion startedAt completedAt}}}}}
+          timelineItems(first:100,itemTypes:[READY_FOR_REVIEW_EVENT,REVIEW_REQUESTED_EVENT]){nodes{__typename ... on ReadyForReviewEvent{createdAt} ... on ReviewRequestedEvent{createdAt}}}
         }
       }
     }

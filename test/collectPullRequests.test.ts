@@ -78,7 +78,6 @@ describe("collectPullRequests", () => {
                   reviews: { nodes: [] },
                   comments: { nodes: [] },
                   commits: { nodes: [] },
-                  checkSuites: { nodes: [] },
                   timelineItems: { nodes: [] },
                 },
                 {
@@ -98,7 +97,6 @@ describe("collectPullRequests", () => {
                   reviews: { nodes: [] },
                   comments: { nodes: [] },
                   commits: { nodes: [] },
-                  checkSuites: { nodes: [] },
                   timelineItems: { nodes: [] },
                 },
               ] as GraphqlPullRequest[],
@@ -130,7 +128,6 @@ describe("collectPullRequests", () => {
                   reviews: { nodes: [] },
                   comments: { nodes: [] },
                   commits: { nodes: [] },
-                  checkSuites: { nodes: [] },
                   timelineItems: { nodes: [] },
                 },
                 {
@@ -150,7 +147,6 @@ describe("collectPullRequests", () => {
                   reviews: { nodes: [] },
                   comments: { nodes: [] },
                   commits: { nodes: [] },
-                  checkSuites: { nodes: [] },
                   timelineItems: { nodes: [] },
                 },
               ] as GraphqlPullRequest[],
@@ -199,7 +195,6 @@ describe("collectPullRequests", () => {
                   reviews: { nodes: [] },
                   comments: { nodes: [] },
                   commits: { nodes: [] },
-                  checkSuites: { nodes: [] },
                   timelineItems: { nodes: [] },
                 },
               ] as GraphqlPullRequest[],
@@ -217,6 +212,86 @@ describe("collectPullRequests", () => {
       onProgress: (c) => counts.push(c),
     });
     expect(counts).toEqual([1]);
+  });
+
+  it("flattens commit check suites and uses correct timeline enums", async () => {
+    let capturedQuery = "";
+    nock(baseUrl)
+      .post("/graphql", (body: any) => {
+        capturedQuery = body.query;
+        return queryRegex.test(body.query);
+      })
+      .reply(200, {
+        data: {
+          repository: {
+            pullRequests: {
+              pageInfo: { hasNextPage: false, endCursor: null },
+              nodes: [
+                {
+                  id: "1",
+                  number: 1,
+                  title: "pr1",
+                  state: "OPEN",
+                  createdAt: "2024-01-01T00:00:00Z",
+                  updatedAt: "2024-01-02T00:00:00Z",
+                  mergedAt: null,
+                  closedAt: null,
+                  additions: 1,
+                  deletions: 1,
+                  changedFiles: 1,
+                  labels: { nodes: [] },
+                  author: { login: "a" },
+                  reviews: { nodes: [] },
+                  comments: { nodes: [] },
+                  commits: {
+                    nodes: [
+                      {
+                        commit: {
+                          oid: "c1",
+                          messageHeadline: "msg",
+                          committedDate: "2024-01-01T00:00:00Z",
+                          checkSuites: {
+                            nodes: [
+                              {
+                                id: "s1",
+                                status: "COMPLETED",
+                                conclusion: "SUCCESS",
+                                startedAt: "2024-01-01T00:00:00Z",
+                                completedAt: "2024-01-01T00:00:10Z",
+                              },
+                              {
+                                id: "s2",
+                                status: "COMPLETED",
+                                conclusion: "FAILURE",
+                                startedAt: "2024-01-01T01:00:00Z",
+                                completedAt: "2024-01-01T01:00:20Z",
+                              },
+                            ],
+                          },
+                        },
+                      },
+                    ],
+                  },
+                  timelineItems: { nodes: [] },
+                },
+              ] as GraphqlPullRequest[],
+            },
+          },
+        },
+      });
+
+    const prs = await collectPullRequests({
+      owner: "me",
+      repo: "repo",
+      since,
+      auth,
+      baseUrl,
+    });
+
+    expect(prs[0]?.checkSuites).toHaveLength(2);
+    expect(capturedQuery).toContain("READY_FOR_REVIEW_EVENT");
+    expect(capturedQuery).toContain("REVIEW_REQUESTED_EVENT");
+    expect(capturedQuery.match(/checkSuites\(first:100\)/g)).toHaveLength(1);
   });
 
   it("extracts ticket info from title", async () => {
@@ -245,7 +320,6 @@ describe("collectPullRequests", () => {
                   reviews: { nodes: [] },
                   comments: { nodes: [] },
                   commits: { nodes: [] },
-                  checkSuites: { nodes: [] },
                   timelineItems: { nodes: [] },
                 },
               ] as GraphqlPullRequest[],
@@ -290,7 +364,6 @@ describe("collectPullRequests", () => {
                   reviews: { nodes: [] },
                   comments: { nodes: [] },
                   commits: { nodes: [] },
-                  checkSuites: { nodes: [] },
                   timelineItems: { nodes: [] },
                 },
                 {
@@ -310,7 +383,6 @@ describe("collectPullRequests", () => {
                   reviews: { nodes: [] },
                   comments: { nodes: [] },
                   commits: { nodes: [] },
-                  checkSuites: { nodes: [] },
                   timelineItems: { nodes: [] },
                 },
               ] as GraphqlPullRequest[],
@@ -357,7 +429,6 @@ describe("collectPullRequests", () => {
                   reviews: { nodes: [] },
                   comments: { nodes: [] },
                   commits: { nodes: [] },
-                  checkSuites: { nodes: [] },
                   timelineItems: { nodes: [] },
                 },
               ] as GraphqlPullRequest[],
@@ -425,7 +496,6 @@ describe("collectPullRequests", () => {
       reviews: { nodes: [] },
       comments: { nodes: [] },
       commits: { nodes: [] },
-      checkSuites: { nodes: [] },
       timelineItems: { nodes: [] },
     });
 

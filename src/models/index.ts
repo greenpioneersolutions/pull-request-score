@@ -31,11 +31,7 @@ export interface Commit {
   oid: string;
   messageHeadline: string;
   committedDate: string;
-  checkSuites: CommitCheckSuite[];
-}
-
-export interface CommitCheckSuite {
-  conclusion: string | null;
+  checkSuites: CheckSuite[];
 }
 
 export interface TimelineItem {

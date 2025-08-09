@@ -18,6 +18,11 @@ export interface GraphQLClientOptions {
    * The rate limit is expressed as requests per minute.
    */
   throttle?: { requestsPerMinute: number };
+  /**
+   * When `false`, allow self-signed or otherwise invalid HTTPS certificates.
+   * Defaults to `true`.
+   */
+  rejectUnauthorized?: boolean;
 }
 
 /**
@@ -39,6 +44,11 @@ export const makeGraphQLClient = (
   });
 
   const OctokitWithThrottle = Octokit.plugin(throttling);
+
+  if (opts.rejectUnauthorized === false) {
+    // Allow self-signed certificates by disabling TLS verification globally
+    process.env["NODE_TLS_REJECT_UNAUTHORIZED"] = "0";
+  }
 
   const octokit = new OctokitWithThrottle({
     baseUrl: opts.baseUrl,

@@ -96,8 +96,8 @@ export function calculateMetrics(
     for (const cs of pr.checkSuites) {
       checkSuiteCount += 1;
       if (cs.conclusion === "SUCCESS") buildSuccess += 1;
-      const start = Date.parse(cs.startedAt);
-      const end = Date.parse(cs.completedAt);
+      const start = Date.parse(cs.createdAt);
+      const end = Date.parse(cs.updatedAt);
       if (!Number.isNaN(start) && !Number.isNaN(end)) {
         totalCiDuration += end - start;
       }

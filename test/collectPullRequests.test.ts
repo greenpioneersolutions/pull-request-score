@@ -538,4 +538,34 @@ describe("collectPullRequests", () => {
     process.env["HOME"] = origHome;
     fs.rmSync(tmp, { recursive: true, force: true });
   });
+
+  it("shrinks page size when node limit exceeded", async () => {
+    const scope = nock(baseUrl, {
+      reqheaders: { authorization: `token ${auth}` },
+    })
+      .post("/graphql", (body) => body.variables.pageSize === 100)
+      .reply(200, { errors: [{ type: "MAX_NODE_LIMIT_EXCEEDED" }] })
+      .post("/graphql", (body) => body.variables.pageSize === 50)
+      .reply(200, {
+        data: {
+          repository: {
+            pullRequests: {
+              pageInfo: { hasNextPage: false, endCursor: null },
+              nodes: [],
+            },
+          },
+        },
+      });
+
+    const prs = await collectPullRequests({
+      owner: "me",
+      repo: "repo",
+      since,
+      auth,
+      baseUrl,
+    });
+
+    expect(prs).toEqual([]);
+    scope.done();
+  });
 });

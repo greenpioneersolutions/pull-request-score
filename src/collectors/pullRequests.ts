@@ -129,9 +129,10 @@ export async function collectPullRequests(
     if (saved?.updatedAt) lastUpdated = saved.updatedAt;
   }
   let hasNextPage = true;
-  const query = `query($owner:String!,$repo:String!,$cursor:String){
+  let pageSize = 100;
+  const query = `query($owner:String!,$repo:String!,$cursor:String,$pageSize:Int!){
     repository(owner:$owner,name:$repo){
-      pullRequests(first:100,after:$cursor,orderBy:{field:UPDATED_AT,direction:DESC}){
+      pullRequests(first:$pageSize,after:$cursor,orderBy:{field:UPDATED_AT,direction:DESC}){
         pageInfo{hasNextPage,endCursor}
         nodes{
           id number title state createdAt updatedAt mergedAt closedAt
@@ -150,13 +151,17 @@ export async function collectPullRequests(
   let retries = 0;
   while (hasNextPage) {
     try {
-      const key: string = createHash("sha1").update(String(cursor)).digest("hex");
+      const key: string = createHash("sha1")
+        .update(String(cursor))
+        .update(String(pageSize))
+        .digest("hex");
       let data: PullRequestsQuery | undefined = params.cache?.get<PullRequestsQuery>(key);
       if (!data) {
         data = (await graphqlWithRetry<PullRequestsQuery>(client, query, {
           owner: params.owner,
           repo: params.repo,
           cursor,
+          pageSize,
         })) as PullRequestsQuery;
         params.cache?.set(key, data);
       }
@@ -200,6 +205,15 @@ export async function collectPullRequests(
       ) {
         await new Promise((r) => setTimeout(r, 2 ** retries * 1000));
         retries += 1;
+        continue;
+      }
+      if (
+        (err.errors?.some((e: any) => e.type === "MAX_NODE_LIMIT_EXCEEDED") ||
+          /MAX_NODE_LIMIT_EXCEEDED/.test(err.message)) &&
+        pageSize > 1
+      ) {
+        pageSize = Math.max(1, Math.floor(pageSize / 2));
+        retries = 0;
         continue;
       }
       if (params.resume && params.cache) {

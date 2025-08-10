@@ -449,7 +449,7 @@ describe("collectPullRequests", () => {
     const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "cache-"));
     const origHome = process.env["HOME"];
     process.env["HOME"] = tmp;
-    const { sqliteStore } = require("../src/cache/sqliteStore");
+    const { sqliteStore } = await import("../src/cache/sqliteStore");
     const cache = sqliteStore();
 
     const scope = nock(baseUrl)
@@ -468,6 +468,7 @@ describe("collectPullRequests", () => {
     await collectPullRequests({ owner: "me", repo: "r", since, auth, baseUrl, cache });
     await collectPullRequests({ owner: "me", repo: "r", since, auth, baseUrl, cache });
 
+    scope.done();
     process.env["HOME"] = origHome;
     fs.rmSync(tmp, { recursive: true, force: true });
   });
@@ -476,7 +477,7 @@ describe("collectPullRequests", () => {
     const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "cache-"));
     const origHome = process.env["HOME"];
     process.env["HOME"] = tmp;
-    const { sqliteStore } = require("../src/cache/sqliteStore");
+    const { sqliteStore } = await import("../src/cache/sqliteStore");
     const cache = sqliteStore();
 
     const makePr = (n: number): GraphqlPullRequest => ({

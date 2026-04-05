@@ -1,5 +1,5 @@
 import Bottleneck from "bottleneck";
-import { makeGraphQLClient } from "../src/api/githubGraphql.js";
+import { makeGraphQLClient, graphqlWithRetry } from "../src/api/githubGraphql.js";
 
 // Mock Bottleneck to observe scheduling
 jest.mock("bottleneck", () => {
@@ -74,5 +74,102 @@ describe("makeGraphQLClient", () => {
         headers: { authorization: "token app-token" },
       }),
     );
+  });
+});
+
+describe("graphqlWithRetry", () => {
+  beforeEach(() => {
+    jest.useFakeTimers();
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+    jest.clearAllMocks();
+  });
+
+  it("returns result on success", async () => {
+    const client = jest.fn().mockResolvedValue({ data: "ok" }) as any;
+    const result = await graphqlWithRetry(client, "{ test }");
+    expect(result).toEqual({ data: "ok" });
+    expect(client).toHaveBeenCalledTimes(1);
+  });
+
+  it("retries on RATE_LIMITED error", async () => {
+    const client = jest
+      .fn()
+      .mockRejectedValueOnce({ errors: [{ type: "RATE_LIMITED" }] })
+      .mockResolvedValue({ data: "ok" }) as any;
+
+    const promise = graphqlWithRetry(client, "{ test }", undefined, {
+      maxAttempts: 3,
+      baseDelayMs: 100,
+      maxDelayMs: 1000,
+    });
+    await jest.advanceTimersByTimeAsync(100);
+    const result = await promise;
+    expect(result).toEqual({ data: "ok" });
+    expect(client).toHaveBeenCalledTimes(2);
+  });
+
+  it("retries on secondary rate limit (403)", async () => {
+    const client = jest
+      .fn()
+      .mockRejectedValueOnce({ status: 403, message: "secondary rate limit" })
+      .mockResolvedValue({ data: "ok" }) as any;
+
+    const promise = graphqlWithRetry(client, "{ test }", undefined, {
+      maxAttempts: 3,
+      baseDelayMs: 100,
+      maxDelayMs: 1000,
+    });
+    await jest.advanceTimersByTimeAsync(100);
+    const result = await promise;
+    expect(result).toEqual({ data: "ok" });
+    expect(client).toHaveBeenCalledTimes(2);
+  });
+
+  it("caps delay at maxDelayMs", async () => {
+    const client = jest
+      .fn()
+      .mockRejectedValueOnce({ errors: [{ type: "RATE_LIMITED" }] })
+      .mockRejectedValueOnce({ errors: [{ type: "RATE_LIMITED" }] })
+      .mockRejectedValueOnce({ errors: [{ type: "RATE_LIMITED" }] })
+      .mockResolvedValue({ data: "ok" }) as any;
+
+    const promise = graphqlWithRetry(client, "{ test }", undefined, {
+      maxAttempts: 5,
+      baseDelayMs: 1000,
+      maxDelayMs: 2000,
+    });
+    // attempt 0 fails => delay min(1*1000, 2000)=1000
+    await jest.advanceTimersByTimeAsync(1000);
+    // attempt 1 fails => delay min(2*1000, 2000)=2000
+    await jest.advanceTimersByTimeAsync(2000);
+    // attempt 2 fails => delay min(4*1000, 2000)=2000 (capped)
+    await jest.advanceTimersByTimeAsync(2000);
+    const result = await promise;
+    expect(result).toEqual({ data: "ok" });
+    expect(client).toHaveBeenCalledTimes(4);
+  });
+
+  it("throws after exhausting retries", async () => {
+    jest.useRealTimers();
+    const error = { errors: [{ type: "RATE_LIMITED" }] };
+    const client = jest.fn().mockRejectedValue(error) as any;
+
+    await expect(
+      graphqlWithRetry(client, "{ test }", undefined, {
+        maxAttempts: 2,
+        baseDelayMs: 1,
+        maxDelayMs: 1,
+      }),
+    ).rejects.toEqual(error);
+    expect(client).toHaveBeenCalledTimes(2);
+  });
+
+  it("accepts plain number for backward compatibility", async () => {
+    const client = jest.fn().mockResolvedValue({ data: "ok" }) as any;
+    const result = await graphqlWithRetry(client, "{ test }", undefined, 3);
+    expect(result).toEqual({ data: "ok" });
   });
 });

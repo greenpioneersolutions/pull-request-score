@@ -91,4 +91,6 @@ export interface PullRequest {
   changedFiles: number;
   /** Labels applied to the pull request */
   labels: { name: string }[];
+  /** File-level data when collected with --include-files */
+  files?: import("./files.js").PrFile[];
 }

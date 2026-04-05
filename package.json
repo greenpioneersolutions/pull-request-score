@@ -1,11 +1,15 @@
 {
-  "name": "@pull-request-score/core",
-  "version": "1.0.0",
-  "description": "",
+  "name": "pull-request-score",
+  "version": "2.0.0",
+  "description": "Collect, calculate, and score GitHub pull request metrics",
   "type": "module",
   "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
-    ".": "./dist/index.js"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
   },
   "files": [
     "dist"

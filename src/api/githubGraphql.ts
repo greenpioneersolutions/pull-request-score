@@ -77,20 +77,47 @@ export const makeGraphQLClient = (
   return scheduledGraphql;
 };
 
+export interface RetryOptions {
+  /** Maximum number of retry attempts. Default: 5 */
+  maxAttempts?: number;
+  /** Base delay in ms for exponential backoff. Default: 1000 */
+  baseDelayMs?: number;
+  /** Maximum delay in ms. Default: 60000 (60s) */
+  maxDelayMs?: number;
+}
+
 export async function graphqlWithRetry<T>(
   client: typeof baseGraphql,
   query: any,
   variables?: any,
-  maxAttempts = 5,
+  retryOpts?: RetryOptions | number,
 ): Promise<T> {
-  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+  const opts: Required<RetryOptions> =
+    typeof retryOpts === "number"
+      ? { maxAttempts: retryOpts, baseDelayMs: 1000, maxDelayMs: 60_000 }
+      : {
+          maxAttempts: retryOpts?.maxAttempts ?? 5,
+          baseDelayMs: retryOpts?.baseDelayMs ?? 1000,
+          maxDelayMs: retryOpts?.maxDelayMs ?? 60_000,
+        };
+
+  for (let attempt = 0; attempt < opts.maxAttempts; attempt++) {
     try {
       return (await client(query, variables)) as T;
     } catch (err: any) {
       const code =
         err.errors?.[0]?.type ?? err.errors?.[0]?.extensions?.code;
-      if (code === "RATE_LIMITED" && attempt < maxAttempts - 1) {
-        await new Promise((r) => setTimeout(r, 2 ** attempt * 1000));
+      const isSecondary =
+        /secondary/i.test(err.message ?? "") || err.status === 403;
+      if (
+        (code === "RATE_LIMITED" || isSecondary) &&
+        attempt < opts.maxAttempts - 1
+      ) {
+        const delay = Math.min(
+          2 ** attempt * opts.baseDelayMs,
+          opts.maxDelayMs,
+        );
+        await new Promise((r) => setTimeout(r, delay));
         continue;
       }
       throw err;

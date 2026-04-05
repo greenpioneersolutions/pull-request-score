@@ -2,7 +2,7 @@ import fs from 'fs';
 import os from 'os';
 import path from 'path';
 import { Writable } from 'stream';
-import { writeOutput } from '../src/output/writers';
+import { writeOutput, flattenToRows } from '../src/output/writers';
 
 describe('writeOutput', () => {
   const metrics = {
@@ -27,9 +27,43 @@ describe('writeOutput', () => {
     writeOutput(metrics, { format: 'csv', destination: tmp });
     const data = fs.readFileSync(tmp, 'utf8');
     expect(data).toBe(
-      'metric,median,p95\ncycleTime,1,2\npickupTime,3,4\n'
+      'metric,value\ncycleTime.median,1\ncycleTime.p95,2\npickupTime.median,3\npickupTime.p95,4\n'
     );
     fs.unlinkSync(tmp);
+  });
+
+  it('resolves relative file paths', () => {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'out-'));
+    const relPath = path.relative(process.cwd(), path.join(tmp, 'metrics.json'));
+    writeOutput(metrics, { destination: relPath });
+    const resolved = path.resolve(relPath);
+    expect(fs.existsSync(resolved)).toBe(true);
+    fs.unlinkSync(resolved);
+    fs.rmdirSync(tmp);
+  });
+
+  it('throws when writing to root path', () => {
+    expect(() => writeOutput(metrics, { destination: '/' })).toThrow(
+      'Refusing to write to root path',
+    );
+  });
+
+  it('flattens nested objects to CSV rows', () => {
+    const data = {
+      mergeRate: 0.8,
+      cycleTime: { median: 5, p95: 10 },
+      outsizedPrs: [1, 2, 3],
+      empty: null,
+    };
+    const rows = flattenToRows(data);
+    expect(rows).toEqual([
+      ['metric', 'value'],
+      ['mergeRate', '0.8'],
+      ['cycleTime.median', '5'],
+      ['cycleTime.p95', '10'],
+      ['outsizedPrs', '1;2;3'],
+      ['empty', ''],
+    ]);
   });
 
   it('writes to stderr when requested', () => {

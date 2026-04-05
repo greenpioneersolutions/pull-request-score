@@ -1,4 +1,5 @@
 import fs from "fs";
+import path from "path";
 import { Writable } from "stream";
 
 export interface OutputMetrics {
@@ -17,10 +18,38 @@ export interface WriteOutputOptions {
 }
 
 /**
+ * Flatten a metrics object into CSV rows.
+ * Handles nested objects by joining keys with dots.
+ */
+export function flattenToRows(
+  data: Record<string, unknown>,
+): string[][] {
+  const rows: string[][] = [["metric", "value"]];
+
+  function walk(obj: unknown, prefix: string): void {
+    if (obj === null || obj === undefined) {
+      rows.push([prefix, ""]);
+    } else if (Array.isArray(obj)) {
+      rows.push([prefix, obj.map(String).join(";")]);
+    } else if (typeof obj === "object") {
+      for (const [k, v] of Object.entries(obj as Record<string, unknown>)) {
+        walk(v, prefix ? `${prefix}.${k}` : k);
+      }
+    } else {
+      rows.push([prefix, String(obj)]);
+    }
+  }
+
+  walk(data, "");
+  return rows;
+}
+
+/**
  * Write metrics to a destination in either JSON or CSV format.
+ * Accepts any data shape — JSON serializes directly, CSV flattens to rows.
  */
 export function writeOutput(
-  metrics: OutputMetrics,
+  metrics: Record<string, unknown>,
   opts: WriteOutputOptions = {},
 ): void {
   const format = opts.format ?? "json";
@@ -28,19 +57,7 @@ export function writeOutput(
 
   let output: string;
   if (format === "csv") {
-    const rows = [
-      ["metric", "median", "p95"],
-      [
-        "cycleTime",
-        String(metrics.cycleTime.median ?? ""),
-        String(metrics.cycleTime.p95 ?? ""),
-      ],
-      [
-        "pickupTime",
-        String(metrics.pickupTime.median ?? ""),
-        String(metrics.pickupTime.p95 ?? ""),
-      ],
-    ];
+    const rows = flattenToRows(metrics);
     output = rows.map((r) => r.join(",")).join("\n");
   } else {
     output = JSON.stringify(metrics, null, 2);
@@ -54,7 +71,11 @@ export function writeOutput(
     } else if (destination === "stderr") {
       process.stderr.write(finalOutput);
     } else {
-      fs.writeFileSync(destination, finalOutput);
+      const resolved = path.resolve(destination);
+      if (resolved === "/" || resolved === path.sep) {
+        throw new Error(`Refusing to write to root path: ${destination}`);
+      }
+      fs.writeFileSync(resolved, finalOutput);
     }
   } else if (destination instanceof Writable) {
     destination.write(finalOutput);

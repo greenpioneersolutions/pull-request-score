@@ -2,15 +2,15 @@ const {themes: prismThemes} = require('prism-react-renderer');
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
-  title: 'My Site',
-  tagline: 'Dinosaurs are cool',
+  title: 'pull-request-score',
+  tagline: 'Score, analyze, and track your team\'s pull requests',
   favicon: 'img/logo.svg',
   future: {
     v4: true,
   },
-  url: 'https://owner.github.io',
+  url: 'https://greenpioneersolutions.github.io',
   baseUrl: '/pull-request-score/',
-  organizationName: 'owner',
+  organizationName: 'greenpioneersolutions',
   projectName: 'pull-request-score',
   deploymentBranch: 'gh-pages',
   onBrokenLinks: 'throw',
@@ -25,7 +25,7 @@ const config = {
       {
         docs: {
           sidebarPath: require.resolve('./sidebars.js'),
-          editUrl: 'https://github.com/owner/repo/edit/main/',
+          editUrl: 'https://github.com/greenpioneersolutions/pull-request-score/edit/main/docs/',
         },
         blog: {
           showReadingTime: true,
@@ -33,7 +33,7 @@ const config = {
             type: ['rss', 'atom'],
             xslt: true,
           },
-          editUrl: 'https://github.com/owner/repo/edit/main/',
+          editUrl: 'https://github.com/greenpioneersolutions/pull-request-score/edit/main/docs/',
         },
         theme: {
           customCss: require.resolve('./src/css/custom.css'),
@@ -44,9 +44,9 @@ const config = {
   themeConfig: {
     image: 'img/logo.svg',
     navbar: {
-      title: 'My Site',
+      title: 'pull-request-score',
       logo: {
-        alt: 'My Site Logo',
+        alt: 'pull-request-score',
         src: 'img/logo.svg',
       },
       items: [
@@ -54,11 +54,11 @@ const config = {
           type: 'docSidebar',
           sidebarId: 'tutorialSidebar',
           position: 'left',
-          label: 'Tutorial',
+          label: 'Docs',
         },
         { to: '/blog', label: 'Blog', position: 'left' },
         {
-          href: 'https://github.com/owner/repo',
+          href: 'https://github.com/greenpioneersolutions/pull-request-score',
           label: 'GitHub',
           position: 'right',
         },
@@ -71,34 +71,25 @@ const config = {
           title: 'Docs',
           items: [
             {
-              label: 'Tutorial',
+              label: 'Getting Started',
               to: '/docs/intro',
             },
-          ],
-        },
-        {
-          title: 'Community',
-          items: [
             {
-              label: 'Stack Overflow',
-              href: 'https://stackoverflow.com/questions/tagged/docusaurus',
+              label: 'Metric Reference',
+              to: '/docs/metric-reference',
             },
-            {
-              label: 'Discord',
-              href: 'https://discordapp.com/invite/docusaurus',
-            },
-            { label: 'X', href: 'https://x.com/docusaurus' },
           ],
         },
         {
           title: 'More',
           items: [
             { label: 'Blog', to: '/blog' },
-            { label: 'GitHub', href: 'https://github.com/owner/repo' },
+            { label: 'GitHub', href: 'https://github.com/greenpioneersolutions/pull-request-score' },
+            { label: 'npm', href: 'https://www.npmjs.com/package/pull-request-score' },
           ],
         },
       ],
-      copyright: `Copyright © ${new Date().getFullYear()} My Project, Inc. Built with Docusaurus.`,
+      copyright: `Copyright © ${new Date().getFullYear()} Green Pioneer Solutions. Built with Docusaurus.`,
     },
     prism: {
       theme: prismThemes.github,

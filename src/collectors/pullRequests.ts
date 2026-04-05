@@ -42,6 +42,8 @@ export interface CollectPullRequestsParams {
   includeLabels?: string[];
   excludeLabels?: string[];
   cache?: CacheStore;
+  /** Upper bound for PR updatedAt (ISO string). PRs updated after this are skipped. */
+  until?: string;
   /** Resume from last saved cursor if available */
   resume?: boolean;
   /** Event emitter to receive progress events */
@@ -110,6 +112,7 @@ export async function collectPullRequests(
     baseUrl: params.baseUrl,
   });
   const since = new Date(params.since);
+  const until = params.until ? new Date(params.until) : undefined;
   const prs: RawPullRequest[] = [];
   const cacheCursorKey = `cursor:${params.owner}/${params.repo}`;
   const persistEvery = 5;
@@ -163,6 +166,9 @@ export async function collectPullRequests(
           hasNextPage = false;
           break;
         }
+        if (until && new Date(pr.updatedAt) > until) {
+          continue;
+        }
         const mapped = mapPR(pr);
         if (
           params.includeLabels &&
@@ -194,7 +200,9 @@ export async function collectPullRequests(
         retries < 5 &&
         (err.status === 403 || /secondary rate/i.test(err.message))
       ) {
-        await new Promise((r) => setTimeout(r, 2 ** retries * 1000));
+        await new Promise((r) =>
+          setTimeout(r, Math.min(2 ** retries * 1000, 60_000)),
+        );
         retries += 1;
         continue;
       }

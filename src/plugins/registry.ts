@@ -1,13 +1,14 @@
 import type { MetricPlugin } from "./MetricPlugin.js";
 
-const plugins: MetricPlugin[] = [];
+let plugins: MetricPlugin[] | undefined;
 
 export function register(plugin: MetricPlugin): void {
+  if (!plugins) plugins = [];
   plugins.push(plugin);
 }
 
 export function getAll(): MetricPlugin[] {
-  return [...plugins];
+  return [...(plugins ?? [])];
 }
 
 // Auto-register built-in calculators

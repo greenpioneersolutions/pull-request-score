@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.0.1] - 2026-04-06
+
+### Fixed
+
+- Plugin registry crashes with "Cannot access 'plugins' before initialization"
+  in ESM environments. Import statements are hoisted in ESM, so the auto-
+  registration imports in `src/plugins/registry.ts` ran before the `plugins`
+  array was initialized. Fixed by lazy-initializing the array on first
+  `register()` call.
+
+---
+
 ## [2.0.0] - 2026-04-04
 
 A major release that transforms `pull-request-score` from a metrics collector
@@ -233,5 +245,6 @@ GitHub pull request metrics.
 
 ---
 
+[2.0.1]: https://github.com/greenpioneersolutions/pull-request-score/compare/v2.0.0...v2.0.1
 [2.0.0]: https://github.com/greenpioneersolutions/pull-request-score/compare/v1.0.0...v2.0.0
 [1.0.0]: https://github.com/greenpioneersolutions/pull-request-score/releases/tag/v1.0.0

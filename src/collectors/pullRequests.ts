@@ -147,6 +147,8 @@ export async function collectPullRequests(
     if (saved?.updatedAt) lastUpdated = saved.updatedAt;
   }
   let hasNextPage = true;
+  // Node budget: GitHub caps nested queries at 500,000 total nodes.
+  // 100 PRs × (10 reviews + 50 comments + 5 commits×25 contexts + 20 labels + 20 timeline) ≈ 22,500
   const query = `query($owner:String!,$repo:String!,$cursor:String){
     repository(owner:$owner,name:$repo){
       pullRequests(first:100,after:$cursor,orderBy:{field:UPDATED_AT,direction:DESC}){
@@ -156,10 +158,10 @@ export async function collectPullRequests(
           additions deletions changedFiles
           labels(first:20){nodes{name}}
           author{login}
-          reviews(first:100){nodes{id state submittedAt author{login}}}
-          comments(first:100){nodes{id body createdAt author{login}}}
-          commits(last:100){nodes{commit{oid committedDate messageHeadline statusCheckRollup{contexts(first:100){nodes{__typename ... on CheckRun{id name status conclusion startedAt completedAt}}}}}}}
-          timelineItems(first:100,itemTypes:[READY_FOR_REVIEW_EVENT,REVIEW_REQUESTED_EVENT]){nodes{__typename ... on ReadyForReviewEvent{createdAt} ... on ReviewRequestedEvent{createdAt}}}
+          reviews(first:10){nodes{id state submittedAt author{login}}}
+          comments(first:50){nodes{id body createdAt author{login}}}
+          commits(last:5){nodes{commit{oid committedDate messageHeadline statusCheckRollup{contexts(first:25){nodes{__typename ... on CheckRun{id name status conclusion startedAt completedAt}}}}}}}
+          timelineItems(first:20,itemTypes:[READY_FOR_REVIEW_EVENT,REVIEW_REQUESTED_EVENT]){nodes{__typename ... on ReadyForReviewEvent{createdAt} ... on ReviewRequestedEvent{createdAt}}}
         }
       }
     }

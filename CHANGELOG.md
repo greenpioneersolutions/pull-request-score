@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.0.4] - 2026-04-10
+
+### Fixed
+
+- GitHub GraphQL query exceeds 500,000 node limit. The nested pagination
+  limits multiplied out to 1,000,000 nodes (100 PRs x 100 commits x 100
+  contexts). Reduced inner limits to stay well under budget: reviews 10,
+  comments 50, commits 5, contexts 25, timeline items 20. Total worst-case
+  is now ~22,500 nodes per page.
+
+---
+
 ## [2.0.3] - 2026-04-10
 
 ### Fixed
@@ -270,6 +282,7 @@ GitHub pull request metrics.
 
 ---
 
+[2.0.4]: https://github.com/greenpioneersolutions/pull-request-score/compare/v2.0.3...v2.0.4
 [2.0.3]: https://github.com/greenpioneersolutions/pull-request-score/compare/v2.0.2...v2.0.3
 [2.0.2]: https://github.com/greenpioneersolutions/pull-request-score/compare/v2.0.1...v2.0.2
 [2.0.1]: https://github.com/greenpioneersolutions/pull-request-score/compare/v2.0.0...v2.0.1

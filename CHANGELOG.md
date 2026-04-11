@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.0.3] - 2026-04-10
+
+### Fixed
+
+- GitHub GraphQL API errors when collecting pull requests. The `checkSuites`
+  field was removed from the PullRequest type in GitHub's schema. CI status
+  is now derived from `statusCheckRollup` on each commit's check runs. Also
+  fixed `timelineItems` filter using invalid enum values (`READY_FOR_REVIEW`,
+  `REVIEW_REQUESTED`) — corrected to `READY_FOR_REVIEW_EVENT` and
+  `REVIEW_REQUESTED_EVENT`.
+
+---
+
 ## [2.0.2] - 2026-04-10
 
 ### Fixed
@@ -257,6 +270,7 @@ GitHub pull request metrics.
 
 ---
 
+[2.0.3]: https://github.com/greenpioneersolutions/pull-request-score/compare/v2.0.2...v2.0.3
 [2.0.2]: https://github.com/greenpioneersolutions/pull-request-score/compare/v2.0.1...v2.0.2
 [2.0.1]: https://github.com/greenpioneersolutions/pull-request-score/compare/v2.0.0...v2.0.1
 [2.0.0]: https://github.com/greenpioneersolutions/pull-request-score/compare/v1.0.0...v2.0.0

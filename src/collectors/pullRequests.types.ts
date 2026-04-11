@@ -16,30 +16,38 @@ export interface GraphqlComment {
   author: GraphqlAuthor | null;
 }
 
+export interface GraphqlCheckRun {
+  __typename: "CheckRun";
+  id: string;
+  name: string;
+  status: string;
+  conclusion: string | null;
+  startedAt: string;
+  completedAt: string;
+}
+
+export interface GraphqlStatusContext {
+  __typename: "StatusContext";
+}
+
+export interface GraphqlStatusCheckRollup {
+  contexts: {
+    nodes: (GraphqlCheckRun | GraphqlStatusContext)[];
+  };
+}
+
 export interface GraphqlCommit {
   commit: {
     oid: string;
     messageHeadline: string;
     committedDate: string;
-    checkSuites: { nodes: GraphqlCommitCheckSuite[] };
+    statusCheckRollup: GraphqlStatusCheckRollup | null;
   };
-}
-
-export interface GraphqlCommitCheckSuite {
-  conclusion: string | null;
 }
 
 export interface GraphqlTimelineItem {
   __typename: string;
   createdAt: string;
-}
-
-export interface GraphqlCheckSuite {
-  id: string;
-  status: string;
-  conclusion: string | null;
-  startedAt: string;
-  completedAt: string;
 }
 
 export interface GraphqlPullRequest {
@@ -59,7 +67,6 @@ export interface GraphqlPullRequest {
   reviews: { nodes: GraphqlReview[] };
   comments: { nodes: GraphqlComment[] };
   commits: { nodes: GraphqlCommit[] };
-  checkSuites: { nodes: GraphqlCheckSuite[] };
   timelineItems: { nodes: GraphqlTimelineItem[] };
 }
 

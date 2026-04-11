@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.0.2] - 2026-04-10
+
+### Fixed
+
+- Plugin registry ESM TDZ crash fully resolved. The v2.0.1 fix (lazy-init
+  with `let plugins | undefined`) still hit the Temporal Dead Zone because
+  ESM hoists imports above ALL `let`/`const` declarations regardless of
+  initializers. The real fix separates auto-registration into its own module
+  (`src/plugins/autoRegister.ts`) so `registry.ts` has zero calculator imports
+  and fully initializes before any calculator calls `register()`.
+
+---
+
 ## [2.0.1] - 2026-04-06
 
 ### Fixed
@@ -14,8 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Plugin registry crashes with "Cannot access 'plugins' before initialization"
   in ESM environments. Import statements are hoisted in ESM, so the auto-
   registration imports in `src/plugins/registry.ts` ran before the `plugins`
-  array was initialized. Fixed by lazy-initializing the array on first
-  `register()` call.
+  array was initialized. (Incomplete fix — see 2.0.2.)
 
 ---
 
@@ -245,6 +257,7 @@ GitHub pull request metrics.
 
 ---
 
+[2.0.2]: https://github.com/greenpioneersolutions/pull-request-score/compare/v2.0.1...v2.0.2
 [2.0.1]: https://github.com/greenpioneersolutions/pull-request-score/compare/v2.0.0...v2.0.1
 [2.0.0]: https://github.com/greenpioneersolutions/pull-request-score/compare/v1.0.0...v2.0.0
 [1.0.0]: https://github.com/greenpioneersolutions/pull-request-score/releases/tag/v1.0.0

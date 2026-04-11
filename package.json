@@ -1,6 +1,6 @@
 {
   "name": "pull-request-score",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "Collect, calculate, and score GitHub pull request metrics",
   "type": "module",
   "main": "./dist/index.js",

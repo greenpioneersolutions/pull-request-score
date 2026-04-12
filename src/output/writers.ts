@@ -45,6 +45,17 @@ export function flattenToRows(
 }
 
 /**
+ * Escape a value for CSV output per RFC 4180.
+ * Wraps in double quotes if the value contains commas, quotes, or newlines.
+ */
+function csvEscape(value: string): string {
+  if (/[",\n\r]/.test(value)) {
+    return `"${value.replace(/"/g, '""')}"`;
+  }
+  return value;
+}
+
+/**
  * Write metrics to a destination in either JSON or CSV format.
  * Accepts any data shape — JSON serializes directly, CSV flattens to rows.
  */
@@ -58,7 +69,9 @@ export function writeOutput(
   let output: string;
   if (format === "csv") {
     const rows = flattenToRows(metrics);
-    output = rows.map((r) => r.join(",")).join("\n");
+    output = rows
+      .map((r) => r.map(csvEscape).join(","))
+      .join("\n");
   } else {
     output = JSON.stringify(metrics, null, 2);
   }

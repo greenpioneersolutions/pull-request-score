@@ -116,8 +116,8 @@ jest.mock("../src/scoring/prScoring", () => ({
     breakdown: {},
   })),
 }));
-jest.mock("../src/cache/sqliteStore", () => ({
-  sqliteStore: jest.fn(() => ({})),
+jest.mock("../src/cache/fileStore", () => ({
+  fileStore: jest.fn(() => ({})),
 }));
 
 import fs from "fs";
@@ -235,10 +235,10 @@ describe("cli", () => {
     const { runCli } = require("../src/cli");
     const logger = require("../src/logger.js").default;
     const mod = require("../src/collectors/pullRequests");
-    const cacheMod = require("../src/cache/sqliteStore");
+    const cacheMod = require("../src/cache/fileStore");
     process.argv = ["node", "cli", "foo/bar", "--token", "t", "--use-cache"];
     await runCli();
-    expect(cacheMod.sqliteStore).toHaveBeenCalled();
+    expect(cacheMod.fileStore).toHaveBeenCalled();
     expect(mod.collectPullRequests).toHaveBeenCalledWith(
       expect.objectContaining({ cache: expect.any(Object) })
     );
@@ -385,6 +385,20 @@ describe("cli", () => {
     );
     expect(process.exitCode).toBe(1);
     process.exitCode = 0;
+  });
+
+  it("includes perRepo in comparison for multi-repo", async () => {
+    const { runCli } = require("../src/cli");
+    process.argv = [
+      "node", "cli", "foo/bar,foo/baz", "--token", "t", "--compare",
+    ];
+    await runCli();
+    const output = JSON.parse(stdout.mock.calls[0]?.[0] as string);
+    expect(output.comparison).toBeDefined();
+    expect(output.comparison.previous).toBeDefined();
+    expect(output.comparison.previous.perRepo).toBeDefined();
+    expect(output.comparison.previous.perRepo["foo/bar"]).toBeDefined();
+    expect(output.comparison.previous.perRepo["foo/baz"]).toBeDefined();
   });
 
   it("includes file analysis with --code-analysis", async () => {

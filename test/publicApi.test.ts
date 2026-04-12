@@ -19,9 +19,6 @@ jest.mock("bottleneck", () => ({
     this.schedule = jest.fn(async (fn: any) => fn());
   }),
 }));
-jest.mock("better-sqlite3", () => {
-  throw new Error("not available");
-});
 
 import {
   collectPullRequests,

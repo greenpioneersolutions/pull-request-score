@@ -66,6 +66,36 @@ describe('writeOutput', () => {
     ]);
   });
 
+  it('escapes CSV values containing commas', () => {
+    const data = { message: 'hello, world' };
+    const chunks: string[] = [];
+    const stream = new Writable({
+      write(chunk, _enc, cb) { chunks.push(String(chunk)); cb(); },
+    });
+    writeOutput(data, { format: 'csv', destination: stream });
+    expect(chunks.join('')).toContain('"hello, world"');
+  });
+
+  it('escapes CSV values containing double quotes', () => {
+    const data = { message: 'say "hello"' };
+    const chunks: string[] = [];
+    const stream = new Writable({
+      write(chunk, _enc, cb) { chunks.push(String(chunk)); cb(); },
+    });
+    writeOutput(data, { format: 'csv', destination: stream });
+    expect(chunks.join('')).toContain('"say ""hello"""');
+  });
+
+  it('escapes CSV values containing newlines', () => {
+    const data = { message: 'line1\nline2' };
+    const chunks: string[] = [];
+    const stream = new Writable({
+      write(chunk, _enc, cb) { chunks.push(String(chunk)); cb(); },
+    });
+    writeOutput(data, { format: 'csv', destination: stream });
+    expect(chunks.join('')).toContain('"line1\nline2"');
+  });
+
   it('writes to stderr when requested', () => {
     const spy = jest.spyOn(process.stderr, 'write').mockImplementation(() => true);
     writeOutput(metrics, { destination: 'stderr' });

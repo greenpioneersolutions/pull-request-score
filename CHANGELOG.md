@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.0.5] - 2026-04-11
+
+### Fixed
+
+- PR number collision in multi-repo file analysis. When multiple repos had
+  the same PR number, `allFileAnalyses` map would overwrite entries. Now keyed
+  by `"owner/repo#number"` with repo-scoped maps for per-repo results.
+- CSV output now escapes values containing commas, double quotes, and newlines
+  per RFC 4180. Previously these produced invalid CSV.
+- Multi-repo comparison (`--compare` with comma-separated repos) now includes
+  `perRepo` breakdown in the previous period result, matching the current period
+  structure.
+
+### Changed
+
+- Replaced `better-sqlite3` (native C++ bindings) with a zero-dependency
+  filesystem-based cache. Each cache entry is stored as a JSON file in
+  `~/.gh-pr-metrics/cache/`. Eliminates installation failures in containers,
+  CI/CD, ARM, and environments without build toolchains. Falls back to
+  in-memory Map if the filesystem is read-only. Same `CacheStore` interface,
+  same `--use-cache`/`--resume` behavior.
+- Removed `better-sqlite3` from dependencies and `@types/better-sqlite3`
+  from devDependencies.
+
+---
+
 ## [2.0.4] - 2026-04-10
 
 ### Fixed
@@ -282,6 +308,7 @@ GitHub pull request metrics.
 
 ---
 
+[2.0.5]: https://github.com/greenpioneersolutions/pull-request-score/compare/v2.0.4...v2.0.5
 [2.0.4]: https://github.com/greenpioneersolutions/pull-request-score/compare/v2.0.3...v2.0.4
 [2.0.3]: https://github.com/greenpioneersolutions/pull-request-score/compare/v2.0.2...v2.0.3
 [2.0.2]: https://github.com/greenpioneersolutions/pull-request-score/compare/v2.0.1...v2.0.2

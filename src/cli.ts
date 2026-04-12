@@ -9,7 +9,7 @@ import {
   CollectPullRequestsParams,
 } from "./collectors/pullRequests.js";
 import { fetchOrgRepos } from "./collectors/orgRepos.js";
-import { sqliteStore } from "./cache/sqliteStore.js";
+import { fileStore } from "./cache/fileStore.js";
 import { calculateCycleTime } from "./calculators/cycleTime.js";
 import { calculateReviewMetrics } from "./calculators/reviewMetrics.js";
 import { calculateMetrics } from "./calculators/metrics.js";
@@ -324,7 +324,7 @@ export async function runCli(argv = process.argv): Promise<void> {
       }
     : undefined;
 
-  const cache = opts.useCache ? sqliteStore() : undefined;
+  const cache = opts.useCache ? fileStore() : undefined;
 
   const baseOpts: BaseCollectOpts = {
     since,
@@ -345,7 +345,8 @@ export async function runCli(argv = process.argv): Promise<void> {
   const isMultiRepo = repoList.length > 1;
   const allPrs: RawPullRequest[] = [];
   const perRepo: Record<string, Record<string, unknown>> = {};
-  const allFileAnalyses = new Map<number, FileAnalysis>();
+  // Key by "owner/repo#number" to avoid PR number collisions across repos
+  const allFileAnalyses = new Map<string, FileAnalysis>();
 
   for (const repoEntry of repoList) {
     const [owner, repo] = repoEntry.split("/") as [string, string];
@@ -353,6 +354,7 @@ export async function runCli(argv = process.argv): Promise<void> {
     if (onProgress) process.stderr.write("\n");
 
     // Fetch files if requested
+    const repoAnalyses = new Map<number, FileAnalysis>();
     if (shouldFetchFiles) {
       const filesMap = await collectFilesForPrs(prs, {
         owner,
@@ -367,7 +369,9 @@ export async function runCli(argv = process.argv): Promise<void> {
         if (files) {
           pr.files = files;
           if (shouldAnalyze) {
-            allFileAnalyses.set(pr.number, analyzePrFiles(files));
+            const analysis = analyzePrFiles(files);
+            repoAnalyses.set(pr.number, analysis);
+            allFileAnalyses.set(`${repoEntry}#${pr.number}`, analysis);
           }
         }
       }
@@ -376,18 +380,28 @@ export async function runCli(argv = process.argv): Promise<void> {
     allPrs.push(...prs);
 
     if (isMultiRepo) {
-      const repoAnalyses = shouldAnalyze
-        ? new Map(prs.filter((p) => allFileAnalyses.has(p.number)).map((p) => [p.number, allFileAnalyses.get(p.number)!]))
-        : undefined;
-      perRepo[repoEntry] = computeRepoResult(prs, opts, repoAnalyses);
+      perRepo[repoEntry] = computeRepoResult(
+        prs,
+        opts,
+        shouldAnalyze ? repoAnalyses : undefined,
+      );
     }
   }
 
-  const result = computeRepoResult(
-    allPrs,
-    opts,
-    shouldAnalyze ? allFileAnalyses : undefined,
-  );
+  // Build a combined analysis map keyed by PR number for the combined result.
+  // For multi-repo, PRs have been collected sequentially so the last repo's
+  // analysis wins for any colliding PR numbers. Per-repo results (above) are
+  // always correct since they use repo-scoped maps.
+  const combinedAnalyses = shouldAnalyze
+    ? new Map<number, FileAnalysis>(
+        [...allFileAnalyses.entries()].map(([key, fa]) => [
+          parseInt(key.split("#")[1]!, 10),
+          fa,
+        ]),
+      )
+    : undefined;
+
+  const result = computeRepoResult(allPrs, opts, combinedAnalyses);
 
   if (isMultiRepo) {
     result["perRepo"] = perRepo;
@@ -400,7 +414,9 @@ export async function runCli(argv = process.argv): Promise<void> {
         ? opts.compare
         : undefined;
     const periods = parsePeriods(opts.since, compareDuration);
-    const previousPrs: RawPullRequest[] = [];
+    const allPreviousPrs: RawPullRequest[] = [];
+    const prevPerRepo: Record<string, Record<string, unknown>> = {};
+
     for (const repoEntry of repoList) {
       const [owner, repo] = repoEntry.split("/") as [string, string];
       const prs = await collectForRepo(owner, repo, {
@@ -408,30 +424,16 @@ export async function runCli(argv = process.argv): Promise<void> {
         since: periods.previous.since,
         until: periods.previous.until,
       } as BaseCollectOpts & { until: string });
-      previousPrs.push(...prs);
-    }
-
-    const prevCycleTimes: number[] = [];
-    const prevPickupTimes: number[] = [];
-    for (const pr of previousPrs) {
-      try {
-        prevCycleTimes.push(calculateCycleTime(pr));
-      } catch {
-        /* skip */
-      }
-      try {
-        prevPickupTimes.push(calculateReviewMetrics(pr));
-      } catch {
-        /* skip */
+      allPreviousPrs.push(...prs);
+      if (isMultiRepo) {
+        prevPerRepo[repoEntry] = computeRepoResult(prs, opts);
       }
     }
 
-    const previousMetrics = calculateMetrics(previousPrs);
-    const previousResult: Record<string, unknown> = {
-      cycleTime: stats(prevCycleTimes),
-      pickupTime: stats(prevPickupTimes),
-      aggregateMetrics: previousMetrics,
-    };
+    const previousResult = computeRepoResult(allPreviousPrs, opts);
+    if (isMultiRepo) {
+      previousResult["perRepo"] = prevPerRepo;
+    }
 
     result["comparison"] = {
       current: { ...result },

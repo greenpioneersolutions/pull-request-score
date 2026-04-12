@@ -369,8 +369,8 @@ describe("collectPullRequests", () => {
     const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "cache-"));
     const origHome = process.env["HOME"];
     process.env["HOME"] = tmp;
-    const { sqliteStore } = require("../src/cache/sqliteStore");
-    const cache = sqliteStore();
+    const { fileStore } = require("../src/cache/fileStore");
+    const cache = fileStore();
 
     const scope = nock(baseUrl)
       .post("/graphql")
@@ -396,8 +396,8 @@ describe("collectPullRequests", () => {
     const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "cache-"));
     const origHome = process.env["HOME"];
     process.env["HOME"] = tmp;
-    const { sqliteStore } = require("../src/cache/sqliteStore");
-    const cache = sqliteStore();
+    const { fileStore } = require("../src/cache/fileStore");
+    const cache = fileStore();
 
     const makePr = (n: number): GraphqlPullRequest => ({
       id: String(n),
